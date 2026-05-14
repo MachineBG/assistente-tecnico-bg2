@@ -403,7 +403,7 @@ async function saveKey() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 5,
         messages: [{ role: 'user', content: 'ok' }]
       })
@@ -605,7 +605,7 @@ async function send() {
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:1500,
         stream:true,
         system:buildSys(),
