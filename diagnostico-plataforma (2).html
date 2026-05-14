@@ -310,14 +310,14 @@ textarea#inp::placeholder{color:var(--muted)}
         <h2>Assistente Técnico BG Service</h2>
         <p>Descreva a falha do equipamento. A IA consulta os manuais e retorna diagnóstico, causas e procedimento de teste.</p>
         <div class="chips">
-          <div class="chip" onclick="chip(this)">Plataforma não sobe</div>
-          <div class="chip" onclick="chip(this)">Motor não liga</div>
-          <div class="chip" onclick="chip(this)">Erro de sobrecarga</div>
-          <div class="chip" onclick="chip(this)">Falha hidráulica</div>
-          <div class="chip" onclick="chip(this)">Alarme contínuo</div>
-          <div class="chip" onclick="chip(this)">Bateria não carrega</div>
-          <div class="chip" onclick="chip(this)">Braço oscila ao subir</div>
-          <div class="chip" onclick="chip(this)">Controle sem resposta</div>
+          <div class="chip" onclick="iniciarTriagem('Plataforma não sobe')">Plataforma não sobe</div>
+          <div class="chip" onclick="iniciarTriagem('Motor não liga')">Motor não liga</div>
+          <div class="chip" onclick="iniciarTriagem('Erro de sobrecarga')">Erro de sobrecarga</div>
+          <div class="chip" onclick="iniciarTriagem('Falha hidráulica')">Falha hidráulica</div>
+          <div class="chip" onclick="iniciarTriagem('Alarme contínuo')">Alarme contínuo</div>
+          <div class="chip" onclick="iniciarTriagem('Bateria não carrega')">Bateria não carrega</div>
+          <div class="chip" onclick="iniciarTriagem('Braço oscila ao subir')">Braço oscila ao subir</div>
+          <div class="chip" onclick="iniciarTriagem('Controle sem resposta')">Controle sem resposta</div>
         </div>
       </div>
     </div>
@@ -530,20 +530,21 @@ function delSess(e,id){e.stopPropagation();S.saveSess(S.sessions().filter(s=>s.i
 function clearAll(){if(!confirm('Apagar todas as conversas?'))return;S.saveSess([]);renderHist();newChat();}
 
 function newChat() {
-  msgs=[]; sessId=null;
+  msgs=[]; sessId=null; triagem=null;
+  document.getElementById('inp').placeholder='Descreva a falha do equipamento...';
   document.getElementById('chat').innerHTML=`
     <div class="empty" id="emptyState">
       <div class="eico">⚙️</div><h2>Assistente Técnico BG Service</h2>
-      <p>Descreva a falha do equipamento. A IA consulta os manuais e retorna diagnóstico, causas e procedimento de teste.</p>
+      <p>Selecione um sintoma ou clique no campo de texto para descrever a falha. A IA seleciona automaticamente o manual correto do equipamento.</p>
       <div class="chips">
-        <div class="chip" onclick="chip(this)">Plataforma não sobe</div>
-        <div class="chip" onclick="chip(this)">Motor não liga</div>
-        <div class="chip" onclick="chip(this)">Erro de sobrecarga</div>
-        <div class="chip" onclick="chip(this)">Falha hidráulica</div>
-        <div class="chip" onclick="chip(this)">Alarme contínuo</div>
-        <div class="chip" onclick="chip(this)">Bateria não carrega</div>
-        <div class="chip" onclick="chip(this)">Braço oscila ao subir</div>
-        <div class="chip" onclick="chip(this)">Controle sem resposta</div>
+        <div class="chip" onclick="iniciarTriagem('Plataforma não sobe')">Plataforma não sobe</div>
+        <div class="chip" onclick="iniciarTriagem('Motor não liga')">Motor não liga</div>
+        <div class="chip" onclick="iniciarTriagem('Erro de sobrecarga')">Erro de sobrecarga</div>
+        <div class="chip" onclick="iniciarTriagem('Falha hidráulica')">Falha hidráulica</div>
+        <div class="chip" onclick="iniciarTriagem('Alarme contínuo')">Alarme contínuo</div>
+        <div class="chip" onclick="iniciarTriagem('Bateria não carrega')">Bateria não carrega</div>
+        <div class="chip" onclick="iniciarTriagem('Braço oscila ao subir')">Braço oscila ao subir</div>
+        <div class="chip" onclick="iniciarTriagem('Controle sem resposta')">Controle sem resposta</div>
       </div>
     </div>`;
   renderHist();
@@ -578,29 +579,148 @@ function infoCtx(){
   return'\n\nINFORMAÇÕES DAS MÁQUINAS:\n'+all.map(i=>`[${new Date(i.date).toLocaleDateString('pt-BR')}] ${i.texto}`).join('\n---\n');
 }
 
-// ── CHAT / STREAMING ──────────────────────────────────
-function chip(el){document.getElementById('inp').value=el.textContent;send();}
+// ── TRIAGEM ────────────────────────────────────────────
+// Estado da consulta atual
+let triagem = null; // { fabricante, modelo, serie, falha }
+
+function chip(el){ iniciarTriagem(el.textContent); }
 function hKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function aResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
 
-async function send() {
-  const key=S.key();
-  if (!key) { openModal(); return; }
-  const inp=document.getElementById('inp');
-  const txt=inp.value.trim(); if(!txt||loading)return;
-
+// Mostra formulário de triagem antes de consultar a IA
+function iniciarTriagem(falhaInicial='') {
+  if (!S.key()) { openModal(); return; }
   document.getElementById('emptyState')?.remove();
-  putBub('usr',txt); msgs.push({role:'user',content:txt});
-  inp.value=''; inp.style.height='auto';
+
+  // Lista de fabricantes/modelos extraída dos nomes dos manuais
+  const manuais = allManuais();
+  const nomes = manuais.map(m => m.name).join('\n');
+
+  const formId = 'triagem-' + Date.now();
+  const div = document.createElement('div');
+  div.id = formId;
+  div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:11px;padding:18px;margin:4px 0;animation:fu .25s ease';
+  div.innerHTML = `
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">
+      🔧 Nova Consulta Técnica
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">FABRICANTE</div>
+        <input id="${formId}-fab" list="${formId}-fab-list" placeholder="Ex: JLG, Skyjack, Haulotte..."
+          style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+        <datalist id="${formId}-fab-list">
+          <option value="JLG"><option value="Skyjack"><option value="Haulotte">
+          <option value="Genie"><option value="Manitou"><option value="Compact">
+        </datalist>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">MODELO</div>
+        <input id="${formId}-mod" placeholder="Ex: 450AJ, SJ3219, Compact 12..."
+          style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">Nº DE SÉRIE <span style="color:var(--muted);font-size:9px">(opcional)</span></div>
+      <input id="${formId}-serie" placeholder="Ex: SJ3219-123456"
+        style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">DESCRIÇÃO DA FALHA</div>
+      <textarea id="${formId}-falha" rows="2" placeholder="Descreva o sintoma ou código de erro..."
+        style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;line-height:1.5"
+        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">${falhaInicial}</textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="submitTriagem('${formId}')"
+        style="flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
+        🔍 Diagnosticar
+      </button>
+      <button onclick="document.getElementById('${formId}').remove()"
+        style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">
+        Cancelar
+      </button>
+    </div>`;
+
+  document.getElementById('chat').appendChild(div);
+  scroll();
+  document.getElementById(formId+'-fab').focus();
+}
+
+async function submitTriagem(formId) {
+  const fab   = document.getElementById(formId+'-fab').value.trim();
+  const mod   = document.getElementById(formId+'-mod').value.trim();
+  const serie = document.getElementById(formId+'-serie').value.trim();
+  const falha = document.getElementById(formId+'-falha').value.trim();
+
+  if (!fab || !mod || !falha) {
+    alert('Preencha pelo menos Fabricante, Modelo e a Falha.');
+    return;
+  }
+
+  triagem = { fabricante:fab, modelo:mod, serie, falha };
+
+  // Remove o formulário
+  document.getElementById(formId).remove();
+
+  // Monta mensagem resumo visível
+  const resumo = `🏗️ ${fab} ${mod}${serie?' · S/N: '+serie:''}\n❗ ${falha}`;
+  putBub('usr', resumo);
+
+  // Seleciona manual relevante
+  const manualSelecionado = selecionarManual(fab, mod);
+
+  const pergunta = `Equipamento: ${fab} ${mod}${serie?' (Nº Série: '+serie+')':''}.\nFalha relatada: ${falha}`;
+  msgs.push({ role:'user', content:pergunta });
+
+  await chamarIA(manualSelecionado);
+}
+
+function selecionarManual(fabricante, modelo) {
+  const manuais = allManuais();
+  if (!manuais.length) return null;
+
+  const termos = [fabricante, modelo].map(t => t.toLowerCase());
+
+  // Pontua cada manual pela quantidade de termos que o nome contém
+  const pontuados = manuais.map(m => {
+    const nome = m.name.toLowerCase();
+    const pts  = termos.reduce((acc, t) => acc + (nome.includes(t) ? 1 : 0), 0);
+    return { m, pts };
+  });
+
+  pontuados.sort((a,b) => b.pts - a.pts);
+
+  // Se o melhor tem pelo menos 1 match, usa ele
+  // Se empate no topo, pega os 2 primeiros
+  const melhor = pontuados[0];
+  if (melhor.pts === 0) return null; // nenhum match, sem manual
+
+  const selecionados = pontuados.filter(p => p.pts === melhor.pts).slice(0, 2);
+  return selecionados.map(p => p.m);
+}
+
+async function chamarIA(manuaisSelecionados) {
   loading=true; document.getElementById('sbtn').disabled=true;
   const {bubble}=mkAiBub();
+
+  // Avisa qual manual está sendo usado
+  if (manuaisSelecionados && manuaisSelecionados.length) {
+    const nomes = manuaisSelecionados.map(m=>m.name).join(', ');
+    bubble.innerHTML = `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">📖 Consultando: ${esc(nomes)}</span><br><br>`;
+  } else {
+    bubble.innerHTML = `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">⚠️ Nenhum manual específico encontrado — usando conhecimento geral</span><br><br>`;
+  }
 
   try {
     const resp=await fetch(API_URL,{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key':key,
+        'x-api-key':S.key(),
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
@@ -608,7 +728,7 @@ async function send() {
         model:'claude-sonnet-4-5',
         max_tokens:1500,
         stream:true,
-        system:buildSys(),
+        system:buildSys(manuaisSelecionados),
         messages:msgs
       })
     });
@@ -624,22 +744,72 @@ async function send() {
         const d=line.slice(6); if(d==='[DONE]')continue;
         try{
           const delta=JSON.parse(d).delta?.text||'';
-          if(delta){full+=delta;cur.remove();bubble.innerHTML=fmtAI(full);bubble.appendChild(cur);scroll();}
+          if(delta){
+            full+=delta;
+            cur.remove();
+            // Mantém o aviso do manual no topo
+            const aviso = bubble.querySelector('span');
+            bubble.innerHTML = (aviso ? aviso.outerHTML+'<br><br>' : '') + fmtAI(full);
+            bubble.appendChild(cur);
+            scroll();
+          }
         }catch{}
       }
     }
-    cur.remove(); bubble.innerHTML=fmtAI(full);
-    msgs.push({role:'assistant',content:full}); saveSession();
+    cur.remove();
+    const aviso = bubble.querySelector('span');
+    bubble.innerHTML = (aviso ? aviso.outerHTML+'<br><br>' : '') + fmtAI(full);
+
+    msgs.push({role:'assistant',content:full});
+    saveSession();
+
+    // Após resposta, mostra botão para nova pergunta sobre o mesmo equipamento
+    const followDiv = document.createElement('div');
+    followDiv.style.cssText='display:flex;gap:8px;margin-top:4px;flex-wrap:wrap';
+    followDiv.innerHTML=`
+      <button onclick="followUp()" style="background:var(--surf2);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+        💬 Pergunta adicional sobre este equipamento
+      </button>
+      <button onclick="iniciarTriagem()" style="background:var(--surf2);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+        🔧 Nova consulta (outro equipamento)
+      </button>`;
+    document.getElementById('chat').appendChild(followDiv);
+    scroll();
 
   } catch(err) {
     bubble.innerHTML='⚠️ Erro de conexão. Verifique a API Key e tente novamente.';
     console.error(err);
   }
-  loading=false; document.getElementById('sbtn').disabled=false; scroll();
+  loading=false; document.getElementById('sbtn').disabled=false;
 }
 
-function buildSys(){
-  const manuais=allManuais();
+// Pergunta adicional sobre o mesmo equipamento (sem refazer triagem)
+function followUp() {
+  const inp = document.getElementById('inp');
+  inp.placeholder = `Pergunta adicional sobre ${triagem?.fabricante||''} ${triagem?.modelo||''}...`;
+  inp.focus();
+}
+
+async function send() {
+  const key=S.key(); if(!key){openModal();return;}
+
+  // Se não tem triagem ativa, abre formulário
+  if (!triagem) { iniciarTriagem(); return; }
+
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim(); if(!txt||loading)return;
+
+  putBub('usr',txt);
+  msgs.push({role:'user',content:txt});
+  inp.value=''; inp.style.height='auto';
+  inp.placeholder='Descreva a falha do equipamento...';
+
+  // Reutiliza o manual já selecionado para follow-up
+  const manualSelecionado = selecionarManual(triagem.fabricante, triagem.modelo);
+  await chamarIA(manualSelecionado);
+}
+
+function buildSys(manuaisSelecionados){
   let base=`Você é o Assistente Técnico da BG Service, especializado em manutenção de plataformas elevatórias e equipamentos de construção.
 
 Ajude técnicos em campo a diagnosticar falhas com rapidez e precisão.
@@ -652,10 +822,15 @@ FORMATO DE RESPOSTA:
 **🔒 SEGURANÇA:** alertas críticos se houver risco
 
 Seja direto e técnico. O técnico está em campo com o equipamento à frente.`;
+
   base+=infoCtx();
-  if(!manuais.length)return base+'\n\nAVISO: Nenhum manual carregado. Use conhecimento geral e sinalize quando necessário consultar o manual específico.';
-  const txt=manuais.map((m,i)=>`=== MANUAL ${i+1}: ${m.name} ===\n${m.content}`).join('\n\n');
-  return base+`\n\nBASE DE CONHECIMENTO:\n${txt}\n\nPRIORIZE os manuais. Cite o manual ao usar informação específica.`;
+
+  if(!manuaisSelecionados || !manuaisSelecionados.length){
+    return base+'\n\nAVISO: Nenhum manual específico encontrado para este equipamento. Use conhecimento geral sobre plataformas elevatórias.';
+  }
+
+  const txt=manuaisSelecionados.map((m,i)=>`=== MANUAL ${i+1}: ${m.name} ===\n${m.content}`).join('\n\n');
+  return base+`\n\nBASE DE CONHECIMENTO (manual selecionado automaticamente):\n${txt}\n\nPRIORIZE as informações do manual. Cite o manual ao usar informação específica.`;
 }
 
 // ── RENDER ────────────────────────────────────────────
