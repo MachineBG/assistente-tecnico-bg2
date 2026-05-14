@@ -154,7 +154,7 @@ textarea#inp::placeholder{color:var(--mut)}
 <body>
 
 <!-- MODAL -->
-<div class="ov" id="ov">
+<div class="ov hide" id="ov">
   <div class="mo">
     <div style="display:flex;align-items:center;gap:10px">
       <img src="Original_on_Transparent.png" style="height:32px;object-fit:contain" alt="BG"
@@ -683,12 +683,15 @@ function scroll(){const c=document.getElementById('chat');c.scrollTop=c.scrollHe
 // ═══ INIT ═══
 window.addEventListener('DOMContentLoaded',()=>{
   uploads=G.mans();
-  // Força reindexacao com cleanText (remove indice antigo)
   uploads.forEach(m=>{delete m.index; buildIndex(m);});
   G.setMans(uploads);
   renderM();updSt();renderH();renderI();updApi();
-  if(!G.key())openModal();
-  else document.getElementById('bsk').style.display='block';
+  if(!G.key()){
+    openModal();
+  } else {
+    document.getElementById('bsk').style.display='block';
+    document.getElementById('ov').classList.add('hide');
+  }
 });
 </script>
 </body>
