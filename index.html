@@ -507,17 +507,64 @@ async function submitForm(id){
   await callIA(selectM(fab,mod));
 }
 
+// Indice de manuais: extrai fabricante/modelo do conteudo
+// Roda uma vez por manual quando carregado, salva no proprio objeto
+function buildIndex(manual){
+  if(manual.index)return; // ja indexado
+  // Pega as primeiras 3000 chars (capa/indice do manual)
+  const preview=manual.content.slice(0,3000).toLowerCase();
+  // Fabricantes conhecidos
+  const fabs=['haulotte','jlg','skyjack','genie','manitou','compact','terex','niftylift','toucan','upright','snorkel'];
+  const found=fabs.filter(f=>preview.includes(f));
+  // Extrai palavras que podem ser modelos (maiusculas, alfanumericas, 3-10 chars)
+  const rawModels=manual.content.slice(0,2000).match(/\b[A-Z0-9]{2,4}[\s\-]?[A-Z0-9]{2,6}\b/g)||[];
+  const models=[...new Set(rawModels)].slice(0,15);
+  manual.index={fabricantes:found,modelos:models.map(m=>m.toLowerCase()),preview:preview.slice(0,500)};
+}
+
 function selectM(fab,mod){
   const all=allM();if(!all.length)return null;
-  const terms=[fab,mod].map(t=>t.toLowerCase().trim()).filter(Boolean);
+
+  // Garante que todos tem indice
+  all.forEach(m=>buildIndex(m));
+
+  const fabL=fab.toLowerCase().trim();
+  const modL=mod.toLowerCase().trim();
+  // Termos extras: palavras individuais do modelo
+  const modWords=modL.split(/[\s\-\/]+/).filter(w=>w.length>1);
+
   const scored=all.map(m=>{
-    const n=m.name.toLowerCase();
-    const pts=terms.reduce((a,t)=>a+(n.includes(t)?2:0),0);
+    let pts=0;
+    const idx=m.index||{fabricantes:[],modelos:[],preview:''};
+    const nameL=m.name.toLowerCase();
+    const contentL=m.content.slice(0,5000).toLowerCase();
+
+    // Fabricante no indice ou nome
+    if(idx.fabricantes.includes(fabL))pts+=10;
+    if(nameL.includes(fabL))pts+=5;
+    if(contentL.includes(fabL))pts+=3;
+
+    // Modelo exato no indice, nome ou conteudo
+    if(idx.modelos.some(x=>x.includes(modL)||modL.includes(x)))pts+=10;
+    if(nameL.includes(modL))pts+=5;
+    if(contentL.includes(modL))pts+=4;
+
+    // Palavras parciais do modelo
+    modWords.forEach(w=>{
+      if(idx.modelos.some(x=>x.includes(w)))pts+=3;
+      if(nameL.includes(w))pts+=2;
+      if(contentL.includes(w))pts+=1;
+    });
+
     return{m,pts};
   });
+
   scored.sort((a,b)=>b.pts-a.pts);
+  console.log('Pontuacao manuais:',scored.slice(0,5).map(x=>x.m.name+': '+x.pts));
+
   if(scored[0].pts===0)return null;
-  return scored.filter(x=>x.pts===scored[0].pts).slice(0,2).map(x=>x.m);
+  // Retorna os 2 com maior pontuacao se tiverem score relevante
+  return scored.filter(x=>x.pts>=scored[0].pts*0.6).slice(0,2).map(x=>x.m);
 }
 
 async function callIA(mans){
@@ -570,11 +617,30 @@ async function sendMsg(){
 }
 
 function buildSys(mans){
-  let base='Voce e o Assistente Tecnico da BG Service, especializado em manutencao de plataformas elevatorias e equipamentos de construcao.\n\nAjude tecnicos em campo a diagnosticar falhas com rapidez e precisao.\n\nFORMATO DE RESPOSTA OBRIGATORIO:\n**DIAGNOSTICO PROVAVEL:** causa mais provavel\n**POSSIVEIS CAUSAS:** em ordem de probabilidade\n**PROCEDIMENTO DE TESTE:** passos numerados\n**SOLUCAO RECOMENDADA:** acao a tomar\n**SEGURANCA:** alertas criticos se houver risco\n\nSeja direto e tecnico. O tecnico esta em campo com o equipamento a frente.';
+  let base=`Voce e o Assistente Tecnico da BG Service, especializado em manutencao de plataformas elevatorias.
+
+REGRAS IMPORTANTES:
+- Se o manual estiver disponivel, use EXCLUSIVAMENTE as informacoes dele
+- Codigos de falha (AL, ERR, E, F seguidos de numeros) devem ser consultados na tabela de erros do manual
+- NUNCA invente codigos ou diagnosticos que nao estejam no manual
+- Se nao encontrar o codigo no manual, diga claramente: "Codigo nao localizado no manual. Com base em conhecimento geral:"
+- Cite sempre a pagina ou secao do manual quando usar uma informacao especifica
+
+FORMATO DE RESPOSTA:
+**CODIGO DE FALHA:** [codigo informado]
+**DIAGNOSTICO:** [o que o manual diz sobre este codigo]
+**CAUSA PROVAVEL:** [causa raiz]
+**PROCEDIMENTO:** passos numerados para verificar e resolver
+**SEGURANCA:** alertas criticos se houver risco`;
+
   base+=infoCtx();
-  if(!mans||!mans.length)return base+'\n\nAVISO: Nenhum manual especifico encontrado. Use conhecimento geral sobre plataformas elevatorias.';
+
+  if(!mans||!mans.length){
+    return base+'\n\nAVISO: Nenhum manual especifico encontrado para este equipamento. Responda com conhecimento geral sobre plataformas elevatorias e deixe claro que e conhecimento geral, nao do manual.';
+  }
+
   const txt=mans.map((m,i)=>'=== MANUAL '+(i+1)+': '+m.name+' ===\n'+m.content).join('\n\n');
-  return base+'\n\nBASE DE CONHECIMENTO (manual selecionado para este equipamento):\n'+txt+'\n\nPRIORIZE as informacoes do manual. Cite o manual ao usar informacao especifica.';
+  return base+`\n\nMANUAL DO EQUIPAMENTO:\n${txt}\n\nIMPORTANTE: Busque o codigo de falha exato na secao de codigos/alarmes/erros do manual acima. Use apenas o que o manual diz.`;
 }
 
 // ═══ RENDER ═══
@@ -606,7 +672,11 @@ function scroll(){const c=document.getElementById('chat');c.scrollTop=c.scrollHe
 
 // ═══ INIT ═══
 window.addEventListener('DOMContentLoaded',()=>{
-  uploads=G.mans();renderM();updSt();renderH();renderI();updApi();
+  uploads=G.mans();
+  // Reconstroi indice de todos os manuais ja salvos
+  uploads.forEach(m=>buildIndex(m));
+  G.setMans(uploads); // salva com indice
+  renderM();updSt();renderH();renderI();updApi();
   if(!G.key())openModal();
   else document.getElementById('bsk').style.display='block';
 });
