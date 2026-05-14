@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BG Service — Assistente Técnico</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --bg:      #111;
+  --surface: #1a1a1a;
+  --surf2:   #222;
+  --border:  #2e2e2e;
+  --red:     #cc0000;
+  --red2:    #e62020;
+  --red-dim: rgba(204,0,0,0.10);
+  --text:    #f0f0f0;
+  --muted:   #666;
+  --ok:      #2ecc71;
+  --err:     #e74c3c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;height:100vh}
+
+/* ── MODAL CONFIG ─────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.hidden{display:none}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);
+  border-radius:14px;padding:32px;max-width:480px;width:100%;
+  display:flex;flex-direction:column;gap:20px;
+}
+.modal-logo{display:flex;align-items:center;gap:12px;}
+.modal-logo img{height:36px;object-fit:contain}
+.modal-logo .ml-text{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800}
+.modal-logo .ml-text span{color:var(--red)}
+.modal h2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
+.modal p{font-size:13px;color:var(--muted);line-height:1.6}
+.modal p a{color:var(--red);text-decoration:none}
+.modal p a:hover{text-decoration:underline}
+.field-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.field-wrap{display:flex;gap:8px;align-items:center}
+.field-wrap input{
+  flex:1;background:var(--surf2);border:1.5px solid var(--border);border-radius:8px;
+  padding:10px 13px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;
+  transition:border-color .2s;
+}
+.field-wrap input:focus{border-color:var(--red)}
+.field-wrap input::placeholder{color:var(--muted)}
+.eye-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px}
+.modal-actions{display:flex;gap:10px}
+.btn-red{background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;flex:1}
+.btn-red:hover{background:var(--red2)}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-ghost:hover{border-color:var(--red);color:var(--red)}
+.key-status{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace}
+.key-dot{width:7px;height:7px;border-radius:50%}
+.key-dot.ok{background:var(--ok)}
+.key-dot.err{background:var(--err)}
+.key-dot.none{background:var(--muted)}
+.modal-hint{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--muted);line-height:1.7}
+.modal-hint code{background:rgba(204,0,0,.15);color:var(--red);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace}
+
+/* ── HEADER ───────────────────────────────────── */
+header{
+  background:#0a0a0a;border-bottom:2px solid var(--red);
+  padding:0 20px;display:flex;align-items:center;justify-content:space-between;
+  height:58px;flex-shrink:0;z-index:100;
+}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-img{height:34px;object-fit:contain}
+.logo-fb{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:#fff;display:none}
+.logo-fb span{color:var(--red)}
+.logo-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
+.h-right{display:flex;align-items:center;gap:8px}
+.api-indicator{
+  display:flex;align-items:center;gap:5px;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
+  background:var(--surf2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;
+  cursor:pointer;transition:border-color .15s;
+}
+.api-indicator:hover{border-color:var(--red)}
+.api-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.api-dot.ok{background:var(--ok);animation:sb 2s infinite}
+.api-dot.err{background:var(--err)}
+@keyframes sb{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sm{background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.btn-sm:hover{background:var(--red2)}
+
+/* ── LAYOUT ───────────────────────────────────── */
+.layout{display:grid;grid-template-columns:300px 1fr;flex:1;min-height:0;overflow:hidden}
+
+/* ── SIDEBAR ──────────────────────────────────── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:10px 0;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.tab.on{color:var(--red);border-bottom-color:var(--red)}
+.panel{display:none;flex-direction:column;overflow-y:auto;flex:1}
+.panel.on{display:flex}
+.pin{padding:16px;display:flex;flex-direction:column;gap:11px}
+.slabel{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+
+.up-zone{border:1.5px dashed var(--border);border-radius:9px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surf2);position:relative}
+.up-zone:hover,.up-zone.over{border-color:var(--red);background:var(--red-dim)}
+.up-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.up-zone .ico{font-size:22px;margin-bottom:5px}
+.up-zone p{font-size:11px;color:var(--muted);line-height:1.5}
+.up-zone strong{color:var(--red)}
+
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mitem{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:7px}
+.mitem .ico{font-size:15px;flex-shrink:0}
+.mitem .nm{flex:1;min-width:0}
+.mitem .nm b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mitem .nm small{color:var(--muted);font-size:10px}
+.mitem .rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;transition:color .15s}
+.mitem .rm:hover{color:var(--err)}
+.badge-fixo{font-size:9px;color:var(--muted);padding:2px 5px;background:var(--surface);border-radius:3px;border:1px solid var(--border)}
+
+.hlist{display:flex;flex-direction:column;gap:5px}
+.hsess{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.hsess:hover,.hsess.on{border-color:var(--red)}
+.hsess.on{background:var(--red-dim)}
+.hhead{display:flex;align-items:center;padding:8px 10px;background:var(--surf2);gap:6px}
+.hhead .ht{flex:1;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hhead .hd{font-size:10px;color:var(--muted);flex-shrink:0}
+.hhead .hdel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;transition:color .15s}
+.hhead .hdel:hover{color:var(--err)}
+.hprev{font-size:11px;color:var(--muted);padding:5px 10px 8px;line-height:1.4}
+.hempty{text-align:center;color:var(--muted);font-size:11px;padding:16px 0}
+
+.iblock{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:11px}
+.iblock textarea{width:100%;background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;resize:vertical;min-height:70px;line-height:1.5}
+.iblock textarea::placeholder{color:var(--muted)}
+.isave-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.snote{font-size:10px;color:var(--ok);opacity:0;transition:opacity .3s}
+.snote.show{opacity:1}
+.iinfo{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ── MAIN ─────────────────────────────────────── */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.chat{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:16px}
+
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;gap:13px}
+.empty .eico{width:66px;height:66px;background:var(--red-dim);border:1px solid rgba(204,0,0,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.empty h2{font-family:'Barlow Condensed',sans-serif;font-size:23px;font-weight:700}
+.empty p{color:var(--muted);font-size:13px;max-width:340px;line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:5px}
+.chip{background:var(--surf2);border:1px solid var(--border);border-radius:20px;padding:6px 13px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--text)}
+.chip:hover{border-color:var(--red);color:var(--red)}
+
+.msg{display:flex;gap:10px;animation:fu .25s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.usr{flex-direction:row-reverse}
+.av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.msg.usr .av{background:#1d1d1d;border:1px solid var(--border)}
+.msg.ai  .av{background:var(--red)}
+.bub{max-width:76%;padding:11px 14px;border-radius:10px;font-size:13.5px;line-height:1.7}
+.msg.usr .bub{background:var(--surf2);border:1px solid var(--border);border-top-right-radius:2px}
+.msg.ai  .bub{background:var(--surface);border:1px solid var(--border);border-top-left-radius:2px}
+.bub .sh{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin:11px 0 3px}
+.bub .sh:first-child{margin-top:0}
+.cursor{display:inline-block;width:2px;height:14px;background:var(--red);margin-left:2px;vertical-align:middle;animation:bl .7s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.dots{display:flex;gap:5px;padding:4px 0}
+.dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:dt 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dt{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+.ibar{padding:11px 18px 15px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.sbar{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin-bottom:7px;font-family:'DM Mono',monospace}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:sb 2s infinite}
+.scnt{color:var(--red)}
+.iwrap{display:flex;gap:8px;align-items:flex-end;background:var(--surf2);border:1.5px solid var(--border);border-radius:11px;padding:8px 12px;transition:border-color .2s}
+.iwrap:focus-within{border-color:var(--red)}
+textarea#inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13.5px;resize:none;line-height:1.5;max-height:110px;min-height:22px}
+textarea#inp::placeholder{color:var(--muted)}
+.sbtn{width:33px;height:33px;background:var(--red);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:background .15s}
+.sbtn:hover{background:var(--red2)}
+.sbtn:disabled{opacity:.4;cursor:not-allowed}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+@media(max-width:700px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ══ MODAL CONFIGURAÇÃO API ══════════════════════════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-logo">
+      <img src="Original_on_Transparent.png" alt="BG Service"
+        onerror="this.style.display='none';document.getElementById('mlFb').style.display='block'">
+      <div id="mlFb" class="ml-text" style="display:none">BG <span>SERVICE</span></div>
+    </div>
+
+    <div>
+      <h2>Configurar Chave de API</h2>
+      <p>Para a IA funcionar, você precisa de uma chave da Anthropic.<br>
+        <a href="https://console.anthropic.com" target="_blank">→ Crie sua chave em console.anthropic.com</a>
+      </p>
+    </div>
+
+    <div>
+      <div class="field-label">Chave de API (API Key)</div>
+      <div class="field-wrap">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+        <button class="eye-btn" onclick="toggleEye()" id="eyeBtn" title="Mostrar/ocultar">👁</button>
+      </div>
+    </div>
+
+    <div class="modal-hint">
+      <strong style="color:var(--text)">Como obter a chave:</strong><br>
+      1. Acesse <code>console.anthropic.com</code><br>
+      2. Clique em <code>API Keys</code> no menu lateral<br>
+      3. Clique em <code>Create Key</code><br>
+      4. Copie a chave e cole acima<br><br>
+      🔒 A chave fica salva <strong style="color:var(--text)">somente no seu navegador</strong>, nunca é enviada para outros servidores além da Anthropic.
+    </div>
+
+    <div id="keyStatus" class="key-status" style="display:none">
+      <div class="key-dot" id="keyDot"></div>
+      <span id="keyMsg"></span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-red" onclick="saveKey()">✓ Salvar e Entrar</button>
+      <button class="btn-ghost" onclick="closeModal()" id="btnSkip" style="display:none">Continuar sem IA</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══════════════════════════════════════════════ -->
+<header>
+  <div class="logo-wrap">
+    <img src="Original_on_Transparent.png" class="logo-img" alt="BG Service"
+      onerror="this.style.display='none';document.getElementById('logoFb').style.display='block'">
+    <div id="logoFb" class="logo-fb">BG <span>SERVICE</span></div>
+    <div class="logo-sub">ASSISTENTE TÉCNICO</div>
+  </div>
+  <div class="h-right">
+    <div class="api-indicator" onclick="openModal()" title="Configurar API Key">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiLabel">sem chave</span>
+    </div>
+    <button class="btn-sm" onclick="newChat()">+ Nova Consulta</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="tabs">
+      <button class="tab on" onclick="swTab('manuais',this)">📚 Manuais</button>
+      <button class="tab" onclick="swTab('hist',this)">🕐 Histórico</button>
+      <button class="tab" onclick="swTab('info',this)">🏗️ Info</button>
+    </div>
+
+    <!-- Manuais -->
+    <div class="panel on" id="tab-manuais">
+      <div class="pin">
+        <div class="slabel">Upload de manuais</div>
+        <div class="up-zone" id="upZone">
+          <input type="file" id="fInput" accept=".pdf,.txt,.md" multiple>
+          <div class="ico">📄</div>
+          <p><strong>Clique ou arraste</strong> manuais aqui<br>PDF, TXT ou MD</p>
+        </div>
+        <div class="mlist" id="mList"></div>
+      </div>
+    </div>
+
+    <!-- Histórico -->
+    <div class="panel" id="tab-hist">
+      <div class="pin">
+        <div class="slabel">Conversas salvas</div>
+        <button class="btn-sm" style="font-size:11px;padding:6px 0;width:100%;" onclick="clearAll()">🗑 Limpar histórico</button>
+        <div class="hlist" id="hList"><div class="hempty">Nenhuma conversa ainda</div></div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="panel" id="tab-info">
+      <div class="pin">
+        <div class="slabel">Notas das máquinas</div>
+        <p class="iinfo">Registre número de série, histórico de manutenção, peças trocadas. A IA usa como contexto.</p>
+        <div class="iblock">
+          <textarea id="infoTxt" placeholder="Ex: Máquina #PE-012 Skyjack 3219&#10;Última revisão: 12/03/2025&#10;Peça trocada: cilindro hidráulico esquerdo&#10;Obs: óleo vazando no pino central..."></textarea>
+          <div class="isave-row">
+            <button class="btn-sm" style="font-size:11px;padding:5px 12px;" onclick="saveInfo()">💾 Salvar nota</button>
+            <span class="snote" id="snote">✓ Salvo!</span>
+          </div>
+        </div>
+        <div class="slabel">Notas salvas</div>
+        <div id="iList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="main">
+    <div class="chat" id="chat">
+      <div class="empty" id="emptyState">
+        <div class="eico">⚙️</div>
+        <h2>Assistente Técnico BG Service</h2>
+        <p>Descreva a falha do equipamento. A IA consulta os manuais e retorna diagnóstico, causas e procedimento de teste.</p>
+        <div class="chips">
+          <div class="chip" onclick="chip(this)">Plataforma não sobe</div>
+          <div class="chip" onclick="chip(this)">Motor não liga</div>
+          <div class="chip" onclick="chip(this)">Erro de sobrecarga</div>
+          <div class="chip" onclick="chip(this)">Falha hidráulica</div>
+          <div class="chip" onclick="chip(this)">Alarme contínuo</div>
+          <div class="chip" onclick="chip(this)">Bateria não carrega</div>
+          <div class="chip" onclick="chip(this)">Braço oscila ao subir</div>
+          <div class="chip" onclick="chip(this)">Controle sem resposta</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ibar">
+      <div class="sbar">
+        <div class="sdot"></div>
+        <span id="statusLine">Configure a API Key para começar · <span class="scnt" id="scnt">0 manuais</span></span>
+      </div>
+      <div class="iwrap">
+        <textarea id="inp" placeholder="Descreva a falha do equipamento..." rows="1"
+          onkeydown="hKey(event)" oninput="aResize(this)"></textarea>
+        <button class="sbtn" id="sbtn" onclick="send()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  MANUAIS EMBUTIDOS POR CÓDIGO
+//  Descomente e preencha para adicionar manuais fixos:
+// ════════════════════════════════════════════════════════
+const FIXOS = [
+  // {
+  //   name: "Manual Skyjack SJ3219 — Diagnóstico",
+  //   content: `
+  //     Cole aqui o texto completo do manual...
+  //   `
+  // },
+];
+// ════════════════════════════════════════════════════════
+
+const API_URL = "https://api.anthropic.com/v1/messages";
+let uploads = [], msgs = [], loading = false, sessId = null;
+
+// ── localStorage ──────────────────────────────────────
+const S = {
+  key:      ()  => localStorage.getItem('bg_key') || '',
+  setKey:   v   => localStorage.setItem('bg_key', v),
+  manuais:  ()  => JSON.parse(localStorage.getItem('bg_m') || '[]'),
+  saveManuais: v => localStorage.setItem('bg_m', JSON.stringify(v)),
+  sessions: ()  => JSON.parse(localStorage.getItem('bg_s') || '[]'),
+  saveSess: v   => localStorage.setItem('bg_s', JSON.stringify(v)),
+  infos:    ()  => JSON.parse(localStorage.getItem('bg_i') || '[]'),
+  saveInfos: v  => localStorage.setItem('bg_i', JSON.stringify(v)),
+};
+
+const allManuais = () => [...FIXOS, ...uploads];
+
+// ── MODAL API KEY ─────────────────────────────────────
+function openModal() {
+  document.getElementById('apiKeyInput').value = S.key();
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  if (S.key()) document.getElementById('btnSkip').style.display = 'block';
+  document.getElementById('keyStatus').style.display = 'none';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+function toggleEye() {
+  const inp = document.getElementById('apiKeyInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function saveKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { showKeyStatus('err', 'Cole a chave antes de salvar'); return; }
+  if (!key.startsWith('sk-ant-')) { showKeyStatus('err', 'Chave inválida — deve começar com sk-ant-'); return; }
+
+  showKeyStatus('none', 'Verificando chave...');
+
+  // Testa a chave com uma chamada mínima
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 5,
+        messages: [{ role: 'user', content: 'ok' }]
+      })
+    });
+    const d = await r.json();
+    if (d.error) { showKeyStatus('err', 'Chave inválida: ' + d.error.message); return; }
+    S.setKey(key);
+    showKeyStatus('ok', 'Chave válida! ✓');
+    updateApiIndicator();
+    setTimeout(closeModal, 900);
+  } catch (e) {
+    showKeyStatus('err', 'Erro de conexão ao verificar');
+  }
+}
+
+function showKeyStatus(type, msg) {
+  const el = document.getElementById('keyStatus');
+  const dot = document.getElementById('keyDot');
+  el.style.display = 'flex';
+  dot.className = 'key-dot ' + type;
+  document.getElementById('keyMsg').textContent = msg;
+}
+
+function updateApiIndicator() {
+  const key = S.key();
+  const dot = document.getElementById('apiDot');
+  const lbl = document.getElementById('apiLabel');
+  if (key) { dot.className = 'api-dot ok'; lbl.textContent = 'IA conectada'; }
+  else      { dot.className = 'api-dot err'; lbl.textContent = 'sem chave'; }
+}
+
+// ── TABS ──────────────────────────────────────────────
+function swTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tab-'+name).classList.add('on');
+}
+
+// ── UPLOAD ────────────────────────────────────────────
+const upZone = document.getElementById('upZone');
+const fInput = document.getElementById('fInput');
+['dragover','dragleave','drop'].forEach(t => upZone.addEventListener(t, e => {
+  e.preventDefault();
+  upZone.classList.toggle('over', t==='dragover');
+  if (t==='drop') handleFiles(e.dataTransfer.files);
+}));
+fInput.addEventListener('change', e => handleFiles(e.target.files));
+
+async function handleFiles(files) {
+  for (const f of files) {
+    if (uploads.find(m => m.name===f.name)) continue;
+    const content = await readFile(f);
+    uploads.push({ name:f.name, content, size:f.size, date:Date.now() });
+    S.saveManuais(uploads);
+  }
+  renderManuais(); updStatus();
+}
+
+function readFile(f) {
+  return new Promise(res => {
+    const r = new FileReader();
+    if (f.type==='application/pdf') {
+      r.readAsText(f,'latin1');
+      r.onload = () => { const m=r.result.match(/[^\x00-\x08\x0e-\x1f\x80-\xff]{4,}/g)||[]; res('[PDF:'+f.name+']\n'+m.join(' ').slice(0,40000)); };
+    } else { r.readAsText(f,'UTF-8'); r.onload=()=>res(r.result.slice(0,40000)); }
+  });
+}
+
+function renderManuais() {
+  const list = document.getElementById('mList');
+  const fxHtml = FIXOS.map(m=>`
+    <div class="mitem"><span class="ico">📗</span>
+    <div class="nm"><b>${esc(m.name)}</b><small>${m.content.length.toLocaleString()} chars</small></div>
+    <span class="badge-fixo">fixo</span></div>`).join('');
+  const upHtml = uploads.map((m,i)=>`
+    <div class="mitem"><span class="ico">📄</span>
+    <div class="nm"><b>${esc(m.name)}</b><small>${(m.size/1024).toFixed(0)} KB · ${new Date(m.date).toLocaleDateString('pt-BR')}</small></div>
+    <button class="rm" onclick="remManual(${i})">✕</button></div>`).join('');
+  list.innerHTML = fxHtml+upHtml || '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0">Nenhum manual ainda</div>';
+}
+
+function remManual(i) { uploads.splice(i,1); S.saveManuais(uploads); renderManuais(); updStatus(); }
+
+function updStatus() {
+  const n = allManuais().length;
+  document.getElementById('scnt').textContent = n+(n===1?' manual':' manuais');
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────
+function saveSession() {
+  if (!msgs.length) return;
+  const all = S.sessions();
+  const id  = sessId || Date.now().toString(); sessId=id;
+  const first = msgs.find(m=>m.role==='user')?.content||'Consulta';
+  const last  = msgs[msgs.length-1]?.content||'';
+  const idx   = all.findIndex(s=>s.id===id);
+  const obj   = {id,title:first.slice(0,60),date:Date.now(),messages:msgs.slice(),preview:last.slice(0,100)};
+  if (idx>=0) all[idx]=obj; else all.unshift(obj);
+  if (all.length>30) all.length=30;
+  S.saveSess(all); renderHist();
+}
+
+function renderHist() {
+  const list=document.getElementById('hList'), all=S.sessions();
+  if (!all.length){list.innerHTML='<div class="hempty">Nenhuma conversa ainda</div>';return;}
+  list.innerHTML=all.map(s=>`
+    <div class="hsess${s.id===sessId?' on':''}" onclick="loadSess('${s.id}')">
+      <div class="hhead"><span class="ht">${esc(s.title)}</span><span class="hd">${new Date(s.date).toLocaleDateString('pt-BR')}</span>
+      <button class="hdel" onclick="delSess(event,'${s.id}')">✕</button></div>
+      <div class="hprev">${esc((s.preview||'').slice(0,90))}${(s.preview||'').length>90?'…':''}</div>
+    </div>`).join('');
+}
+
+function loadSess(id) {
+  const s=S.sessions().find(x=>x.id===id); if(!s) return;
+  sessId=id; msgs=s.messages.slice();
+  const chat=document.getElementById('chat'); chat.innerHTML='';
+  msgs.forEach(m=>putBub(m.role,m.content));
+  renderHist(); swTab('manuais',document.querySelectorAll('.tab')[0]);
+}
+
+function delSess(e,id){e.stopPropagation();S.saveSess(S.sessions().filter(s=>s.id!==id));if(sessId===id)newChat();else renderHist();}
+function clearAll(){if(!confirm('Apagar todas as conversas?'))return;S.saveSess([]);renderHist();newChat();}
+
+function newChat() {
+  msgs=[]; sessId=null;
+  document.getElementById('chat').innerHTML=`
+    <div class="empty" id="emptyState">
+      <div class="eico">⚙️</div><h2>Assistente Técnico BG Service</h2>
+      <p>Descreva a falha do equipamento. A IA consulta os manuais e retorna diagnóstico, causas e procedimento de teste.</p>
+      <div class="chips">
+        <div class="chip" onclick="chip(this)">Plataforma não sobe</div>
+        <div class="chip" onclick="chip(this)">Motor não liga</div>
+        <div class="chip" onclick="chip(this)">Erro de sobrecarga</div>
+        <div class="chip" onclick="chip(this)">Falha hidráulica</div>
+        <div class="chip" onclick="chip(this)">Alarme contínuo</div>
+        <div class="chip" onclick="chip(this)">Bateria não carrega</div>
+        <div class="chip" onclick="chip(this)">Braço oscila ao subir</div>
+        <div class="chip" onclick="chip(this)">Controle sem resposta</div>
+      </div>
+    </div>`;
+  renderHist();
+}
+
+// ── INFO MÁQUINAS ─────────────────────────────────────
+function saveInfo(){
+  const txt=document.getElementById('infoTxt').value.trim(); if(!txt)return;
+  const all=S.infos(); all.unshift({id:Date.now().toString(),texto:txt,date:Date.now()});
+  if(all.length>50)all.length=50; S.saveInfos(all);
+  document.getElementById('infoTxt').value=''; renderInfos();
+  const n=document.getElementById('snote'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'),1800);
+}
+
+function renderInfos(){
+  const list=document.getElementById('iList'),all=S.infos();
+  if(!all.length){list.innerHTML='';return;}
+  list.innerHTML=all.map(i=>`
+    <div class="iblock">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;display:flex;justify-content:space-between;">
+        <span>${new Date(i.date).toLocaleString('pt-BR')}</span>
+        <button onclick="delInfo('${i.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕</button>
+      </div>
+      <div style="font-size:11px;line-height:1.5;white-space:pre-wrap">${esc(i.texto)}</div>
+    </div>`).join('');
+}
+
+function delInfo(id){S.saveInfos(S.infos().filter(i=>i.id!==id));renderInfos();}
+
+function infoCtx(){
+  const all=S.infos(); if(!all.length)return'';
+  return'\n\nINFORMAÇÕES DAS MÁQUINAS:\n'+all.map(i=>`[${new Date(i.date).toLocaleDateString('pt-BR')}] ${i.texto}`).join('\n---\n');
+}
+
+// ── CHAT / STREAMING ──────────────────────────────────
+function chip(el){document.getElementById('inp').value=el.textContent;send();}
+function hKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function aResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+async function send() {
+  const key=S.key();
+  if (!key) { openModal(); return; }
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim(); if(!txt||loading)return;
+
+  document.getElementById('emptyState')?.remove();
+  putBub('usr',txt); msgs.push({role:'user',content:txt});
+  inp.value=''; inp.style.height='auto';
+  loading=true; document.getElementById('sbtn').disabled=true;
+  const {bubble}=mkAiBub();
+
+  try {
+    const resp=await fetch(API_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        stream:true,
+        system:buildSys(),
+        messages:msgs
+      })
+    });
+
+    let full='';
+    const reader=resp.body.getReader(), dec=new TextDecoder();
+    const cur=document.createElement('span'); cur.className='cursor'; bubble.appendChild(cur);
+
+    while(true){
+      const {done,value}=await reader.read(); if(done)break;
+      const lines=dec.decode(value,{stream:true}).split('\n').filter(l=>l.startsWith('data: '));
+      for(const line of lines){
+        const d=line.slice(6); if(d==='[DONE]')continue;
+        try{
+          const delta=JSON.parse(d).delta?.text||'';
+          if(delta){full+=delta;cur.remove();bubble.innerHTML=fmtAI(full);bubble.appendChild(cur);scroll();}
+        }catch{}
+      }
+    }
+    cur.remove(); bubble.innerHTML=fmtAI(full);
+    msgs.push({role:'assistant',content:full}); saveSession();
+
+  } catch(err) {
+    bubble.innerHTML='⚠️ Erro de conexão. Verifique a API Key e tente novamente.';
+    console.error(err);
+  }
+  loading=false; document.getElementById('sbtn').disabled=false; scroll();
+}
+
+function buildSys(){
+  const manuais=allManuais();
+  let base=`Você é o Assistente Técnico da BG Service, especializado em manutenção de plataformas elevatórias e equipamentos de construção.
+
+Ajude técnicos em campo a diagnosticar falhas com rapidez e precisão.
+
+FORMATO DE RESPOSTA:
+**🔍 DIAGNÓSTICO PROVÁVEL:** causa mais provável
+**⚠️ POSSÍVEIS CAUSAS:** em ordem de probabilidade
+**🛠️ PROCEDIMENTO DE TESTE:** passos numerados
+**✅ SOLUÇÃO RECOMENDADA:** ação a tomar
+**🔒 SEGURANÇA:** alertas críticos se houver risco
+
+Seja direto e técnico. O técnico está em campo com o equipamento à frente.`;
+  base+=infoCtx();
+  if(!manuais.length)return base+'\n\nAVISO: Nenhum manual carregado. Use conhecimento geral e sinalize quando necessário consultar o manual específico.';
+  const txt=manuais.map((m,i)=>`=== MANUAL ${i+1}: ${m.name} ===\n${m.content}`).join('\n\n');
+  return base+`\n\nBASE DE CONHECIMENTO:\n${txt}\n\nPRIORIZE os manuais. Cite o manual ao usar informação específica.`;
+}
+
+// ── RENDER ────────────────────────────────────────────
+function putBub(role,text){
+  const chat=document.getElementById('chat'), d=document.createElement('div');
+  d.className='msg '+(role==='usr'?'usr':'ai');
+  d.innerHTML=`<div class="av">${role==='usr'?'👷':'🔧'}</div><div class="bub">${role==='ai'?fmtAI(text):esc(text)}</div>`;
+  chat.appendChild(d); scroll();
+}
+
+function mkAiBub(){
+  const chat=document.getElementById('chat'), d=document.createElement('div'); d.className='msg ai';
+  const b=document.createElement('div'); b.className='bub';
+  b.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
+  d.innerHTML='<div class="av">🔧</div>'; d.appendChild(b); chat.appendChild(d); scroll();
+  return{div:d,bubble:b};
+}
+
+function fmtAI(t){
+  t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t=t.replace(/^\*\*([^*\n]+)\*\*:?\s*$/gm,'<span class="sh">$1</span>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/^(\d+)\.\s+/gm,'<br><strong style="color:var(--red)">$1.</strong> ');
+  t=t.replace(/^[-•]\s+/gm,'<br>• ');
+  t=t.replace(/\n/g,'<br>');
+  return t;
+}
+
+function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function scroll(){const c=document.getElementById('chat');c.scrollTop=c.scrollHeight;}
+
+// ── INIT ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  uploads=S.manuais(); renderManuais(); updStatus();
+  renderHist(); renderInfos(); updateApiIndicator();
+  // Abre modal se não tiver chave ainda
+  if (!S.key()) openModal();
+  else document.getElementById('btnSkip').style.display='block';
+});
+</script>
+</body>
+</html>
