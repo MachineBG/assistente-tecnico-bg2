@@ -3,301 +3,252 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BG Service — Assistente Técnico</title>
+<title>BG Service - Assistente Tecnico</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-
-:root {
-  --bg:      #111;
-  --surface: #1a1a1a;
-  --surf2:   #222;
-  --border:  #2e2e2e;
-  --red:     #cc0000;
-  --red2:    #e62020;
-  --red-dim: rgba(204,0,0,0.10);
-  --text:    #f0f0f0;
-  --muted:   #666;
-  --ok:      #2ecc71;
-  --err:     #e74c3c;
-}
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{--bg:#111;--sur:#1a1a1a;--su2:#222;--bdr:#2e2e2e;--red:#cc0000;--rd2:#e62020;--rdm:rgba(204,0,0,0.10);--txt:#f0f0f0;--mut:#666;--ok:#2ecc71;--er:#e74c3c}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;height:100vh}
-
-/* ── MODAL CONFIG ─────────────────────────────── */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;
-  display:flex;align-items:center;justify-content:center;padding:20px;
-}
-.modal-overlay.hidden{display:none}
-.modal{
-  background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);
-  border-radius:14px;padding:32px;max-width:480px;width:100%;
-  display:flex;flex-direction:column;gap:20px;
-}
-.modal-logo{display:flex;align-items:center;gap:12px;}
-.modal-logo img{height:36px;object-fit:contain}
-.modal-logo .ml-text{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800}
-.modal-logo .ml-text span{color:var(--red)}
-.modal h2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
-.modal p{font-size:13px;color:var(--muted);line-height:1.6}
-.modal p a{color:var(--red);text-decoration:none}
-.modal p a:hover{text-decoration:underline}
-.field-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
-.field-wrap{display:flex;gap:8px;align-items:center}
-.field-wrap input{
-  flex:1;background:var(--surf2);border:1.5px solid var(--border);border-radius:8px;
-  padding:10px 13px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;
-  transition:border-color .2s;
-}
-.field-wrap input:focus{border-color:var(--red)}
-.field-wrap input::placeholder{color:var(--muted)}
-.eye-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px}
-.modal-actions{display:flex;gap:10px}
-.btn-red{background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;flex:1}
-.btn-red:hover{background:var(--red2)}
-.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
-.btn-ghost:hover{border-color:var(--red);color:var(--red)}
-.key-status{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace}
-.key-dot{width:7px;height:7px;border-radius:50%}
-.key-dot.ok{background:var(--ok)}
-.key-dot.err{background:var(--err)}
-.key-dot.none{background:var(--muted)}
-.modal-hint{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--muted);line-height:1.7}
-.modal-hint code{background:rgba(204,0,0,.15);color:var(--red);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace}
-
-/* ── HEADER ───────────────────────────────────── */
-header{
-  background:#0a0a0a;border-bottom:2px solid var(--red);
-  padding:0 20px;display:flex;align-items:center;justify-content:space-between;
-  height:58px;flex-shrink:0;z-index:100;
-}
-.logo-wrap{display:flex;align-items:center;gap:10px}
-.logo-img{height:34px;object-fit:contain}
-.logo-fb{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:#fff;display:none}
-.logo-fb span{color:var(--red)}
-.logo-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px}
-.h-right{display:flex;align-items:center;gap:8px}
-.api-indicator{
-  display:flex;align-items:center;gap:5px;
-  font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);
-  background:var(--surf2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;
-  cursor:pointer;transition:border-color .15s;
-}
-.api-indicator:hover{border-color:var(--red)}
-.api-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
-.api-dot.ok{background:var(--ok);animation:sb 2s infinite}
-.api-dot.err{background:var(--err)}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;height:100vh}
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ov.hide{display:none}
+.mo{background:var(--sur);border:1px solid var(--bdr);border-top:3px solid var(--red);border-radius:14px;padding:28px;max-width:460px;width:100%;display:flex;flex-direction:column;gap:16px}
+.mo h2{font-size:20px;font-weight:700}
+.mo p{font-size:13px;color:var(--mut);line-height:1.6}
+.mo a{color:var(--red);text-decoration:none}
+.fl{font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+.fw{display:flex;gap:8px;align-items:center}
+.fw input{flex:1;background:var(--su2);border:1.5px solid var(--bdr);border-radius:8px;padding:10px 13px;color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .2s}
+.fw input:focus{border-color:var(--red)}
+.fw input::placeholder{color:var(--mut)}
+.eye{background:none;border:none;color:var(--mut);cursor:pointer;font-size:18px;padding:4px}
+.ma{display:flex;gap:8px}
+.br{background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;flex:1}
+.br:hover{background:var(--rd2)}
+.br:disabled{opacity:.5;cursor:not-allowed}
+.bg{background:none;border:1px solid var(--bdr);color:var(--mut);border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.kst{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace;display:none}
+.kd{width:7px;height:7px;border-radius:50%}
+.kd.ok{background:var(--ok)}.kd.er{background:var(--er)}.kd.no{background:var(--mut)}
+.mh{background:var(--su2);border:1px solid var(--bdr);border-radius:8px;padding:11px;font-size:11px;color:var(--mut);line-height:1.7}
+.mh code{background:rgba(204,0,0,.15);color:var(--red);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace}
+/* HEADER */
+header{background:#0a0a0a;border-bottom:2px solid var(--red);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;z-index:10}
+.lw{display:flex;align-items:center;gap:10px}
+.li{height:32px;object-fit:contain}
+.lf{font-size:22px;font-weight:800;color:#fff;display:none}.lf span{color:var(--red)}
+.ls{font-family:'DM Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:1px}
+.hr{display:flex;align-items:center;gap:8px}
+.ai{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--mut);background:var(--su2);border:1px solid var(--bdr);padding:4px 10px;border-radius:20px;cursor:pointer;transition:border-color .15s}
+.ai:hover{border-color:var(--red)}
+.ad{width:6px;height:6px;border-radius:50%;background:var(--mut)}
+.ad.ok{background:var(--ok);animation:sb 2s infinite}
+.ad.er{background:var(--er)}
 @keyframes sb{0%,100%{opacity:1}50%{opacity:.3}}
-.btn-sm{background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
-.btn-sm:hover{background:var(--red2)}
-
-/* ── LAYOUT ───────────────────────────────────── */
-.layout{display:grid;grid-template-columns:300px 1fr;flex:1;min-height:0;overflow:hidden}
-
-/* ── SIDEBAR ──────────────────────────────────── */
-.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-.tab{flex:1;padding:10px 0;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.bs{background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.bs:hover{background:var(--rd2)}
+/* LAYOUT */
+.lay{display:grid;grid-template-columns:290px 1fr;flex:1;min-height:0;overflow:hidden}
+/* SIDEBAR */
+.sb{background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.tab{flex:1;padding:10px 0;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.8px;text-transform:uppercase;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
 .tab.on{color:var(--red);border-bottom-color:var(--red)}
-.panel{display:none;flex-direction:column;overflow-y:auto;flex:1}
-.panel.on{display:flex}
-.pin{padding:16px;display:flex;flex-direction:column;gap:11px}
-.slabel{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
-
-.up-zone{border:1.5px dashed var(--border);border-radius:9px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surf2);position:relative}
-.up-zone:hover,.up-zone.over{border-color:var(--red);background:var(--red-dim)}
-.up-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.up-zone .ico{font-size:22px;margin-bottom:5px}
-.up-zone p{font-size:11px;color:var(--muted);line-height:1.5}
-.up-zone strong{color:var(--red)}
-
-.mlist{display:flex;flex-direction:column;gap:6px}
-.mitem{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:7px}
-.mitem .ico{font-size:15px;flex-shrink:0}
-.mitem .nm{flex:1;min-width:0}
-.mitem .nm b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mitem .nm small{color:var(--muted);font-size:10px}
-.mitem .rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;transition:color .15s}
-.mitem .rm:hover{color:var(--err)}
-.badge-fixo{font-size:9px;color:var(--muted);padding:2px 5px;background:var(--surface);border-radius:3px;border:1px solid var(--border)}
-
-.hlist{display:flex;flex-direction:column;gap:5px}
-.hsess{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s}
-.hsess:hover,.hsess.on{border-color:var(--red)}
-.hsess.on{background:var(--red-dim)}
-.hhead{display:flex;align-items:center;padding:8px 10px;background:var(--surf2);gap:6px}
-.hhead .ht{flex:1;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hhead .hd{font-size:10px;color:var(--muted);flex-shrink:0}
-.hhead .hdel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;transition:color .15s}
-.hhead .hdel:hover{color:var(--err)}
-.hprev{font-size:11px;color:var(--muted);padding:5px 10px 8px;line-height:1.4}
-.hempty{text-align:center;color:var(--muted);font-size:11px;padding:16px 0}
-
-.iblock{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:11px}
-.iblock textarea{width:100%;background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;resize:vertical;min-height:70px;line-height:1.5}
-.iblock textarea::placeholder{color:var(--muted)}
-.isave-row{display:flex;align-items:center;gap:8px;margin-top:7px}
-.snote{font-size:10px;color:var(--ok);opacity:0;transition:opacity .3s}
-.snote.show{opacity:1}
-.iinfo{font-size:11px;color:var(--muted);line-height:1.5}
-
-/* ── MAIN ─────────────────────────────────────── */
+.pan{display:none;flex-direction:column;overflow-y:auto;flex:1}
+.pan.on{display:flex}
+.pin{padding:15px;display:flex;flex-direction:column;gap:10px}
+.sl{font-family:'DM Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase}
+/* UPLOAD */
+.uz{border:1.5px dashed var(--bdr);border-radius:9px;padding:15px 12px;text-align:center;cursor:pointer;transition:all .2s;background:var(--su2);position:relative}
+.uz:hover,.uz.ov2{border-color:var(--red);background:var(--rdm)}
+.uz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uz .ui{font-size:20px;margin-bottom:4px}
+.uz p{font-size:11px;color:var(--mut);line-height:1.5}
+.uz strong{color:var(--red)}
+.ml{display:flex;flex-direction:column;gap:6px}
+.mi{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--su2);border:1px solid var(--bdr);border-left:3px solid var(--red);border-radius:7px}
+.mi .ic{font-size:14px;flex-shrink:0}
+.mi .nm{flex:1;min-width:0}
+.mi .nm b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi .nm small{color:var(--mut);font-size:10px}
+.mi .rm{background:none;border:none;color:var(--mut);cursor:pointer;font-size:12px;transition:color .15s}
+.mi .rm:hover{color:var(--er)}
+.bfx{font-size:9px;color:var(--mut);padding:2px 5px;background:var(--sur);border-radius:3px;border:1px solid var(--bdr)}
+/* HISTORY */
+.hl{display:flex;flex-direction:column;gap:5px}
+.hs{border:1px solid var(--bdr);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.hs:hover,.hs.on{border-color:var(--red)}
+.hs.on{background:var(--rdm)}
+.hh{display:flex;align-items:center;padding:8px 10px;background:var(--su2);gap:6px}
+.hh .ht{flex:1;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hh .hd{font-size:10px;color:var(--mut);flex-shrink:0}
+.hh .hx{background:none;border:none;color:var(--mut);cursor:pointer;font-size:12px;transition:color .15s}
+.hh .hx:hover{color:var(--er)}
+.hp{font-size:11px;color:var(--mut);padding:5px 10px 8px;line-height:1.4}
+.hem{text-align:center;color:var(--mut);font-size:11px;padding:14px 0}
+/* INFO */
+.ib{background:var(--su2);border:1px solid var(--bdr);border-radius:8px;padding:10px}
+.ib textarea{width:100%;background:none;border:none;outline:none;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:12px;resize:vertical;min-height:65px;line-height:1.5}
+.ib textarea::placeholder{color:var(--mut)}
+.sn{font-size:10px;color:var(--ok);opacity:0;transition:opacity .3s}
+.sn.show{opacity:1}
+/* MAIN */
 .main{display:flex;flex-direction:column;overflow:hidden}
-.chat{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:16px}
-
-.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;gap:13px}
-.empty .eico{width:66px;height:66px;background:var(--red-dim);border:1px solid rgba(204,0,0,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px}
-.empty h2{font-family:'Barlow Condensed',sans-serif;font-size:23px;font-weight:700}
-.empty p{color:var(--muted);font-size:13px;max-width:340px;line-height:1.6}
-.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:5px}
-.chip{background:var(--surf2);border:1px solid var(--border);border-radius:20px;padding:6px 13px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--text)}
-.chip:hover{border-color:var(--red);color:var(--red)}
-
-.msg{display:flex;gap:10px;animation:fu .25s ease}
-@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.msg.usr{flex-direction:row-reverse}
-.av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.msg.usr .av{background:#1d1d1d;border:1px solid var(--border)}
-.msg.ai  .av{background:var(--red)}
-.bub{max-width:76%;padding:11px 14px;border-radius:10px;font-size:13.5px;line-height:1.7}
-.msg.usr .bub{background:var(--surf2);border:1px solid var(--border);border-top-right-radius:2px}
-.msg.ai  .bub{background:var(--surface);border:1px solid var(--border);border-top-left-radius:2px}
-.bub .sh{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin:11px 0 3px}
+.chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+/* EMPTY */
+.emp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;gap:12px}
+.emp .ei{width:62px;height:62px;background:var(--rdm);border:1px solid rgba(204,0,0,.3);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.emp h2{font-size:21px;font-weight:700}
+.emp p{color:var(--mut);font-size:13px;max-width:320px;line-height:1.6}
+.cps{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
+.cp{background:var(--su2);border:1px solid var(--bdr);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--txt)}
+.cp:hover{border-color:var(--red);color:var(--red)}
+/* MESSAGES */
+.msg{display:flex;gap:9px;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:29px;height:29px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.msg.u .av{background:#1d1d1d;border:1px solid var(--bdr)}
+.msg.a .av{background:var(--red)}
+.bub{max-width:78%;padding:10px 13px;border-radius:10px;font-size:13.5px;line-height:1.7}
+.msg.u .bub{background:var(--su2);border:1px solid var(--bdr);border-top-right-radius:2px}
+.msg.a .bub{background:var(--sur);border:1px solid var(--bdr);border-top-left-radius:2px}
+.bub .sh{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin:10px 0 3px}
 .bub .sh:first-child{margin-top:0}
-.cursor{display:inline-block;width:2px;height:14px;background:var(--red);margin-left:2px;vertical-align:middle;animation:bl .7s infinite}
+.cur{display:inline-block;width:2px;height:14px;background:var(--red);margin-left:2px;vertical-align:middle;animation:bl .7s infinite}
 @keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
-.dots{display:flex;gap:5px;padding:4px 0}
-.dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:dt 1.2s infinite}
-.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+.dts{display:flex;gap:5px;padding:4px 0}
+.dts span{width:6px;height:6px;background:var(--mut);border-radius:50%;animation:dt 1.2s infinite}
+.dts span:nth-child(2){animation-delay:.2s}.dts span:nth-child(3){animation-delay:.4s}
 @keyframes dt{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
-
-.ibar{padding:11px 18px 15px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
-.sbar{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin-bottom:7px;font-family:'DM Mono',monospace}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:sb 2s infinite}
-.scnt{color:var(--red)}
-.iwrap{display:flex;gap:8px;align-items:flex-end;background:var(--surf2);border:1.5px solid var(--border);border-radius:11px;padding:8px 12px;transition:border-color .2s}
-.iwrap:focus-within{border-color:var(--red)}
-textarea#inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13.5px;resize:none;line-height:1.5;max-height:110px;min-height:22px}
-textarea#inp::placeholder{color:var(--muted)}
-.sbtn{width:33px;height:33px;background:var(--red);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:background .15s}
-.sbtn:hover{background:var(--red2)}
-.sbtn:disabled{opacity:.4;cursor:not-allowed}
-
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
-@media(max-width:700px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+/* TRIAGEM FORM */
+.tf{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--red);border-radius:11px;padding:16px;animation:fu .2s ease}
+.tf .tl{font-family:'DM Mono',monospace;font-size:10px;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.tf input,.tf textarea{width:100%;background:var(--su2);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.tf input:focus,.tf textarea:focus{border-color:var(--red)}
+.tf input::placeholder,.tf textarea::placeholder{color:var(--mut)}
+.tf textarea{resize:none;line-height:1.5}
+.ta{display:flex;gap:7px;margin-top:12px}
+/* INPUT BAR */
+.ibar{padding:10px 16px 14px;border-top:1px solid var(--bdr);background:var(--sur);flex-shrink:0}
+.stl{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mut);margin-bottom:7px;font-family:'DM Mono',monospace}
+.sd{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:sb 2s infinite}
+.sc{color:var(--red)}
+.iw{display:flex;gap:7px;align-items:flex-end;background:var(--su2);border:1.5px solid var(--bdr);border-radius:11px;padding:8px 12px;transition:border-color .2s}
+.iw:focus-within{border-color:var(--red)}
+textarea#inp{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;resize:none;line-height:1.5;max-height:100px;min-height:20px}
+textarea#inp::placeholder{color:var(--mut)}
+.sbt{width:32px;height:32px;background:var(--red);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:background .15s}
+.sbt:hover{background:var(--rd2)}
+.sbt:disabled{opacity:.4;cursor:not-allowed}
+/* PROGRESS */
+.pg{height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-top:5px}
+.pgb{height:100%;width:0%;background:var(--red);border-radius:2px;transition:width .2s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:10px}
+@media(max-width:680px){.lay{grid-template-columns:1fr}.sb{display:none}}
 </style>
 </head>
 <body>
 
-<!-- ══ MODAL CONFIGURAÇÃO API ══════════════════════════════ -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-logo">
-      <img src="Original_on_Transparent.png" alt="BG Service"
-        onerror="this.style.display='none';document.getElementById('mlFb').style.display='block'">
-      <div id="mlFb" class="ml-text" style="display:none">BG <span>SERVICE</span></div>
+<!-- MODAL -->
+<div class="ov" id="ov">
+  <div class="mo">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="Original_on_Transparent.png" style="height:32px;object-fit:contain" alt="BG"
+        onerror="this.style.display='none';document.getElementById('mlfb').style.display='block'">
+      <div id="mlfb" style="display:none;font-size:20px;font-weight:800;color:#fff">BG <span style="color:var(--red)">SERVICE</span></div>
     </div>
-
+    <h2>Configurar Chave de API</h2>
+    <p>Para a IA funcionar voce precisa de uma chave da Anthropic.<br>
+      <a href="https://console.anthropic.com" target="_blank">Crie sua chave em console.anthropic.com</a></p>
     <div>
-      <h2>Configurar Chave de API</h2>
-      <p>Para a IA funcionar, você precisa de uma chave da Anthropic.<br>
-        <a href="https://console.anthropic.com" target="_blank">→ Crie sua chave em console.anthropic.com</a>
-      </p>
-    </div>
-
-    <div>
-      <div class="field-label">Chave de API (API Key)</div>
-      <div class="field-wrap">
-        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
-        <button class="eye-btn" onclick="toggleEye()" id="eyeBtn" title="Mostrar/ocultar">👁</button>
+      <div class="fl">Chave de API</div>
+      <div class="fw">
+        <input type="password" id="ki" placeholder="sk-ant-api03-..." autocomplete="off">
+        <button class="eye" onclick="document.getElementById('ki').type=document.getElementById('ki').type==='password'?'text':'password'">&#128065;</button>
       </div>
     </div>
-
-    <div class="modal-hint">
-      <strong style="color:var(--text)">Como obter a chave:</strong><br>
+    <div class="mh">
+      <strong style="color:var(--txt)">Como obter:</strong><br>
       1. Acesse <code>console.anthropic.com</code><br>
-      2. Clique em <code>API Keys</code> no menu lateral<br>
+      2. Menu lateral: <code>API Keys</code><br>
       3. Clique em <code>Create Key</code><br>
-      4. Copie a chave e cole acima<br><br>
-      🔒 A chave fica salva <strong style="color:var(--text)">somente no seu navegador</strong>, nunca é enviada para outros servidores além da Anthropic.
+      4. Copie e cole acima<br><br>
+      A chave fica salva somente no seu navegador.
     </div>
-
-    <div id="keyStatus" class="key-status" style="display:none">
-      <div class="key-dot" id="keyDot"></div>
-      <span id="keyMsg"></span>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-red" onclick="saveKey()">✓ Salvar e Entrar</button>
-      <button class="btn-ghost" onclick="closeModal()" id="btnSkip" style="display:none">Continuar sem IA</button>
+    <div class="kst" id="kst"><div class="kd no" id="kd"></div><span id="km"></span></div>
+    <div class="ma">
+      <button class="br" onclick="saveKey()">Salvar e Entrar</button>
+      <button class="bg" id="bsk" style="display:none" onclick="closeModal()">Continuar</button>
     </div>
   </div>
 </div>
 
-<!-- ══ HEADER ══════════════════════════════════════════════ -->
+<!-- HEADER -->
 <header>
-  <div class="logo-wrap">
-    <img src="Original_on_Transparent.png" class="logo-img" alt="BG Service"
-      onerror="this.style.display='none';document.getElementById('logoFb').style.display='block'">
-    <div id="logoFb" class="logo-fb">BG <span>SERVICE</span></div>
-    <div class="logo-sub">ASSISTENTE TÉCNICO</div>
+  <div class="lw">
+    <img src="Original_on_Transparent.png" class="li" alt="BG Service"
+      onerror="this.style.display='none';document.getElementById('lfb').style.display='block'">
+    <div id="lfb" class="lf">BG <span>SERVICE</span></div>
+    <div class="ls">ASSISTENTE TECNICO</div>
   </div>
-  <div class="h-right">
-    <div class="api-indicator" onclick="openModal()" title="Configurar API Key">
-      <div class="api-dot" id="apiDot"></div>
-      <span id="apiLabel">sem chave</span>
+  <div class="hr">
+    <div class="ai" onclick="openModal()">
+      <div class="ad" id="adi"></div>
+      <span id="all">sem chave</span>
     </div>
-    <button class="btn-sm" onclick="newChat()">+ Nova Consulta</button>
+    <button class="bs" onclick="newChat()">+ Nova Consulta</button>
   </div>
 </header>
 
-<div class="layout">
-
+<div class="lay">
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sb">
     <div class="tabs">
-      <button class="tab on" onclick="swTab('manuais',this)">📚 Manuais</button>
-      <button class="tab" onclick="swTab('hist',this)">🕐 Histórico</button>
-      <button class="tab" onclick="swTab('info',this)">🏗️ Info</button>
+      <button class="tab on" onclick="swT('man',this)">Manuais</button>
+      <button class="tab" onclick="swT('his',this)">Historico</button>
+      <button class="tab" onclick="swT('inf',this)">Info</button>
     </div>
 
     <!-- Manuais -->
-    <div class="panel on" id="tab-manuais">
+    <div class="pan on" id="tab-man">
       <div class="pin">
-        <div class="slabel">Upload de manuais</div>
-        <div class="up-zone" id="upZone">
-          <input type="file" id="fInput" accept=".pdf,.txt,.md" multiple>
-          <div class="ico">📄</div>
-          <p><strong>Clique ou arraste</strong> manuais aqui<br>PDF, TXT ou MD</p>
+        <div class="sl">Upload de manuais</div>
+        <div class="uz" id="uz">
+          <input type="file" id="fi" accept=".pdf,.txt,.md" multiple>
+          <div class="ui">&#128196;</div>
+          <p><strong>Clique ou arraste</strong> PDFs aqui</p>
         </div>
-        <div class="mlist" id="mList"></div>
+        <div class="ml" id="ml"></div>
       </div>
     </div>
 
-    <!-- Histórico -->
-    <div class="panel" id="tab-hist">
+    <!-- Historico -->
+    <div class="pan" id="tab-his">
       <div class="pin">
-        <div class="slabel">Conversas salvas</div>
-        <button class="btn-sm" style="font-size:11px;padding:6px 0;width:100%;" onclick="clearAll()">🗑 Limpar histórico</button>
-        <div class="hlist" id="hList"><div class="hempty">Nenhuma conversa ainda</div></div>
+        <div class="sl">Conversas salvas</div>
+        <button class="br" style="font-size:11px;padding:6px 0" onclick="clearAll()">Limpar historico</button>
+        <div class="hl" id="hl"><div class="hem">Nenhuma conversa ainda</div></div>
       </div>
     </div>
 
     <!-- Info -->
-    <div class="panel" id="tab-info">
+    <div class="pan" id="tab-inf">
       <div class="pin">
-        <div class="slabel">Notas das máquinas</div>
-        <p class="iinfo">Registre número de série, histórico de manutenção, peças trocadas. A IA usa como contexto.</p>
-        <div class="iblock">
-          <textarea id="infoTxt" placeholder="Ex: Máquina #PE-012 Skyjack 3219&#10;Última revisão: 12/03/2025&#10;Peça trocada: cilindro hidráulico esquerdo&#10;Obs: óleo vazando no pino central..."></textarea>
-          <div class="isave-row">
-            <button class="btn-sm" style="font-size:11px;padding:5px 12px;" onclick="saveInfo()">💾 Salvar nota</button>
-            <span class="snote" id="snote">✓ Salvo!</span>
+        <div class="sl">Notas das maquinas</div>
+        <p style="font-size:11px;color:var(--mut);line-height:1.5">Registre numero de serie, manutencoes, pecas trocadas. A IA usa como contexto.</p>
+        <div class="ib">
+          <textarea id="itx" rows="4" placeholder="Ex: Maquina PE-012 JLG 450AJ&#10;Serie: 12345&#10;Revisao: 12/03/2025&#10;Peca trocada: cilindro hidraulico"></textarea>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
+            <button class="br" style="font-size:11px;padding:5px 12px" onclick="saveInfo()">Salvar nota</button>
+            <span class="sn" id="sn">Salvo!</span>
           </div>
         </div>
-        <div class="slabel">Notas salvas</div>
-        <div id="iList" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div class="sl">Notas salvas</div>
+        <div id="il" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
     </div>
   </div>
@@ -305,669 +256,359 @@ textarea#inp::placeholder{color:var(--muted)}
   <!-- CHAT -->
   <div class="main">
     <div class="chat" id="chat">
-      <div class="empty" id="emptyState">
-        <div class="eico">⚙️</div>
-        <h2>Assistente Técnico BG Service</h2>
-        <p>Descreva a falha do equipamento. A IA consulta os manuais e retorna diagnóstico, causas e procedimento de teste.</p>
-        <div class="chips">
-          <div class="chip" onclick="iniciarTriagem('Plataforma não sobe')">Plataforma não sobe</div>
-          <div class="chip" onclick="iniciarTriagem('Motor não liga')">Motor não liga</div>
-          <div class="chip" onclick="iniciarTriagem('Erro de sobrecarga')">Erro de sobrecarga</div>
-          <div class="chip" onclick="iniciarTriagem('Falha hidráulica')">Falha hidráulica</div>
-          <div class="chip" onclick="iniciarTriagem('Alarme contínuo')">Alarme contínuo</div>
-          <div class="chip" onclick="iniciarTriagem('Bateria não carrega')">Bateria não carrega</div>
-          <div class="chip" onclick="iniciarTriagem('Braço oscila ao subir')">Braço oscila ao subir</div>
-          <div class="chip" onclick="iniciarTriagem('Controle sem resposta')">Controle sem resposta</div>
+      <div class="emp" id="es">
+        <div class="ei">&#9881;</div>
+        <h2>Assistente Tecnico BG Service</h2>
+        <p>Selecione um sintoma ou descreva a falha. A IA seleciona o manual correto automaticamente.</p>
+        <div class="cps">
+          <div class="cp" onclick="abrirForm('Plataforma nao sobe')">Plataforma nao sobe</div>
+          <div class="cp" onclick="abrirForm('Motor nao liga')">Motor nao liga</div>
+          <div class="cp" onclick="abrirForm('Erro de sobrecarga')">Erro de sobrecarga</div>
+          <div class="cp" onclick="abrirForm('Falha hidraulica')">Falha hidraulica</div>
+          <div class="cp" onclick="abrirForm('Alarme continuo')">Alarme continuo</div>
+          <div class="cp" onclick="abrirForm('Bateria nao carrega')">Bateria nao carrega</div>
+          <div class="cp" onclick="abrirForm('Braco oscila ao subir')">Braco oscila ao subir</div>
+          <div class="cp" onclick="abrirForm('Controle sem resposta')">Controle sem resposta</div>
         </div>
       </div>
     </div>
-
     <div class="ibar">
-      <div class="sbar">
-        <div class="sdot"></div>
-        <span id="statusLine">Configure a API Key para começar · <span class="scnt" id="scnt">0 manuais</span></span>
+      <div class="stl">
+        <div class="sd"></div>
+        <span>IA online &middot; <span class="sc" id="sc">0 manuais</span></span>
       </div>
-      <div class="iwrap">
-        <textarea id="inp" placeholder="Descreva a falha do equipamento..." rows="1"
-          onkeydown="hKey(event)" oninput="aResize(this)"></textarea>
-        <button class="sbtn" id="sbtn" onclick="send()">➤</button>
+      <div class="iw">
+        <textarea id="inp" placeholder="Descreva a falha ou clique em Nova Consulta..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button class="sbt" id="sbt" onclick="sendMsg()">&#10148;</button>
       </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-  // Configura worker do PDF.js
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
-//  Descomente e preencha para adicionar manuais fixos:
-// ════════════════════════════════════════════════════════
-const FIXOS = [
-  // {
-  //   name: "Manual Skyjack SJ3219 — Diagnóstico",
-  //   content: `
-  //     Cole aqui o texto completo do manual...
-  //   `
-  // },
-];
-// ════════════════════════════════════════════════════════
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-const API_URL = "https://api.anthropic.com/v1/messages";
-let uploads = [], msgs = [], loading = false, sessId = null;
+// ═══ MANUAIS FIXOS (edite aqui para adicionar manuais permanentes) ═══
+const FIXOS=[];
+// Exemplo:
+// const FIXOS=[{ name:"Manual JLG 450AJ", content:`...texto do manual...` }];
 
-// ── localStorage ──────────────────────────────────────
-const S = {
-  key:      ()  => localStorage.getItem('bg_key') || '',
-  setKey:   v   => localStorage.setItem('bg_key', v),
-  manuais:  ()  => JSON.parse(localStorage.getItem('bg_m') || '[]'),
-  saveManuais: v => localStorage.setItem('bg_m', JSON.stringify(v)),
-  sessions: ()  => JSON.parse(localStorage.getItem('bg_s') || '[]'),
-  saveSess: v   => localStorage.setItem('bg_s', JSON.stringify(v)),
-  infos:    ()  => JSON.parse(localStorage.getItem('bg_i') || '[]'),
-  saveInfos: v  => localStorage.setItem('bg_i', JSON.stringify(v)),
+// ═══ STORAGE ═══
+const G={
+  key:()=>localStorage.getItem('bg_k')||'',
+  setKey:v=>localStorage.setItem('bg_k',v),
+  mans:()=>JSON.parse(localStorage.getItem('bg_m')||'[]'),
+  setMans:v=>localStorage.setItem('bg_m',JSON.stringify(v)),
+  sess:()=>JSON.parse(localStorage.getItem('bg_s')||'[]'),
+  setSess:v=>localStorage.setItem('bg_s',JSON.stringify(v)),
+  info:()=>JSON.parse(localStorage.getItem('bg_i')||'[]'),
+  setInfo:v=>localStorage.setItem('bg_i',JSON.stringify(v)),
 };
 
-const allManuais = () => [...FIXOS, ...uploads];
+let uploads=[],msgs=[],loading=false,sessId=null,triagem=null;
+const allM=()=>[...FIXOS,...uploads];
 
-// ── MODAL API KEY ─────────────────────────────────────
-function openModal() {
-  document.getElementById('apiKeyInput').value = S.key();
-  document.getElementById('modalOverlay').classList.remove('hidden');
-  if (S.key()) document.getElementById('btnSkip').style.display = 'block';
-  document.getElementById('keyStatus').style.display = 'none';
+// ═══ MODAL ═══
+function openModal(){
+  document.getElementById('ki').value=G.key();
+  document.getElementById('ov').classList.remove('hide');
+  document.getElementById('kst').style.display='none';
+  if(G.key())document.getElementById('bsk').style.display='block';
 }
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-}
-
-function toggleEye() {
-  const inp = document.getElementById('apiKeyInput');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
-async function saveKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) { showKeyStatus('err', 'Cole a chave antes de salvar'); return; }
-  if (!key.startsWith('sk-ant-')) { showKeyStatus('err', 'Chave inválida — deve começar com sk-ant-'); return; }
-
-  showKeyStatus('none', 'Verificando chave...');
-
-  // Testa a chave com uma chamada mínima
-  try {
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 5,
-        messages: [{ role: 'user', content: 'ok' }]
-      })
-    });
-    const d = await r.json();
-    if (d.error) { showKeyStatus('err', 'Chave inválida: ' + d.error.message); return; }
-    S.setKey(key);
-    showKeyStatus('ok', 'Chave válida! ✓');
-    updateApiIndicator();
-    setTimeout(closeModal, 900);
-  } catch (e) {
-    showKeyStatus('err', 'Erro de conexão ao verificar');
-  }
-}
-
-function showKeyStatus(type, msg) {
-  const el = document.getElementById('keyStatus');
-  const dot = document.getElementById('keyDot');
-  el.style.display = 'flex';
-  dot.className = 'key-dot ' + type;
-  document.getElementById('keyMsg').textContent = msg;
-}
-
-function updateApiIndicator() {
-  const key = S.key();
-  const dot = document.getElementById('apiDot');
-  const lbl = document.getElementById('apiLabel');
-  if (key) { dot.className = 'api-dot ok'; lbl.textContent = 'IA conectada'; }
-  else      { dot.className = 'api-dot err'; lbl.textContent = 'sem chave'; }
-}
-
-// ── TABS ──────────────────────────────────────────────
-function swTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('tab-'+name).classList.add('on');
-}
-
-// ── UPLOAD ────────────────────────────────────────────
-const upZone = document.getElementById('upZone');
-const fInput = document.getElementById('fInput');
-['dragover','dragleave','drop'].forEach(t => upZone.addEventListener(t, e => {
-  e.preventDefault();
-  upZone.classList.toggle('over', t==='dragover');
-  if (t==='drop') handleFiles(e.dataTransfer.files);
-}));
-fInput.addEventListener('change', e => handleFiles(e.target.files));
-
-async function handleFiles(files) {
-  for (const f of files) {
-    if (uploads.find(m => m.name===f.name)) continue;
-
-    // Adiciona item com progresso na lista
-    const tempId = 'prog-' + Date.now();
-    addProgresso(tempId, f.name);
-
-    try {
-      const content = await readFile(f, (pct) => updateProgresso(tempId, pct));
-      uploads.push({ name:f.name, content, size:f.size, date:Date.now() });
-      S.saveManuais(uploads);
-    } catch(e) {
-      console.error('Erro ao ler arquivo:', f.name, e);
-    }
-
-    removeProgresso(tempId);
-    renderManuais();
-    updStatus();
-  }
-}
-
-function addProgresso(id, nome) {
-  const list = document.getElementById('mList');
-  const div = document.createElement('div');
-  div.id = id;
-  div.className = 'mitem';
-  div.style.flexDirection = 'column';
-  div.style.alignItems = 'flex-start';
-  div.style.gap = '6px';
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;width:100%">
-      <span class="ico">⏳</span>
-      <div class="nm"><b style="font-size:11px">${esc(nome)}</b><small>Extraindo texto...</small></div>
-    </div>
-    <div style="width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
-      <div id="${id}-bar" style="height:100%;width:0%;background:var(--red);border-radius:2px;transition:width .2s"></div>
-    </div>`;
-  list.appendChild(div);
-}
-
-function updateProgresso(id, pct) {
-  const bar = document.getElementById(id+'-bar');
-  if (bar) bar.style.width = pct + '%';
-}
-
-function removeProgresso(id) {
-  document.getElementById(id)?.remove();
-}
-
-async function readFile(f, onProgress) {
-  if (f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
-    return await extractPDF(f, onProgress);
-  } else {
-    return new Promise(res => {
-      const r = new FileReader();
-      r.readAsText(f, 'UTF-8');
-      r.onload = () => { onProgress && onProgress(100); res(r.result.slice(0, 60000)); };
-    });
-  }
-}
-
-async function extractPDF(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(file);
-    reader.onload = async () => {
-      try {
-        const typedArray = new Uint8Array(reader.result);
-        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-        const totalPages = pdf.numPages;
-        let fullText = `[Manual PDF: ${file.name} — ${totalPages} páginas]\n\n`;
-
-        for (let i = 1; i <= totalPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-
-          // Reconstrói o texto mantendo estrutura de linhas
-          let pageText = '';
-          let lastY = null;
-          for (const item of textContent.items) {
-            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
-              pageText += '\n';
-            }
-            pageText += item.str + ' ';
-            lastY = item.transform[5];
-          }
-
-          fullText += `--- Página ${i} ---\n${pageText.trim()}\n\n`;
-
-          if (onProgress) onProgress(Math.round((i / totalPages) * 100));
-
-          // Limite de 80.000 chars para não estourar contexto
-          if (fullText.length > 80000) {
-            fullText += `\n[Texto truncado — total de ${totalPages} páginas, exibindo primeiras ${i}]`;
-            break;
-          }
-        }
-
-        resolve(fullText);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.onerror = reject;
-  });
-}
-
-function renderManuais() {
-  const list = document.getElementById('mList');
-  const fxHtml = FIXOS.map(m=>`
-    <div class="mitem"><span class="ico">📗</span>
-    <div class="nm"><b>${esc(m.name)}</b><small>Fixo · ${m.content.length.toLocaleString()} chars</small></div>
-    <span class="badge-fixo">fixo</span></div>`).join('');
-  const upHtml = uploads.map((m,i)=>{
-    const pagesMatch = m.content.match(/(\d+) páginas/);
-    const info = pagesMatch ? pagesMatch[1]+' pág.' : (m.size/1024).toFixed(0)+' KB';
-    const quali = m.content.length > 5000
-      ? '<span style="color:var(--ok);font-size:9px">✓ ok</span>'
-      : '<span style="color:var(--err);font-size:9px">⚠ pouco texto</span>';
-    return `
-    <div class="mitem"><span class="ico">📄</span>
-    <div class="nm"><b>${esc(m.name)}</b><small>${info} · ${m.content.length.toLocaleString()} chars ${quali}</small></div>
-    <button class="rm" onclick="remManual(${i})">✕</button></div>`;
-  }).join('');
-  list.innerHTML = fxHtml+upHtml || '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0">Nenhum manual ainda</div>';
-}
-
-function remManual(i) { uploads.splice(i,1); S.saveManuais(uploads); renderManuais(); updStatus(); }
-
-function updStatus() {
-  const n = allManuais().length;
-  document.getElementById('scnt').textContent = n+(n===1?' manual':' manuais');
-}
-
-// ── HISTÓRICO ─────────────────────────────────────────
-function saveSession() {
-  if (!msgs.length) return;
-  const all = S.sessions();
-  const id  = sessId || Date.now().toString(); sessId=id;
-  const first = msgs.find(m=>m.role==='user')?.content||'Consulta';
-  const last  = msgs[msgs.length-1]?.content||'';
-  const idx   = all.findIndex(s=>s.id===id);
-  const obj   = {id,title:first.slice(0,60),date:Date.now(),messages:msgs.slice(),preview:last.slice(0,100)};
-  if (idx>=0) all[idx]=obj; else all.unshift(obj);
-  if (all.length>30) all.length=30;
-  S.saveSess(all); renderHist();
-}
-
-function renderHist() {
-  const list=document.getElementById('hList'), all=S.sessions();
-  if (!all.length){list.innerHTML='<div class="hempty">Nenhuma conversa ainda</div>';return;}
-  list.innerHTML=all.map(s=>`
-    <div class="hsess${s.id===sessId?' on':''}" onclick="loadSess('${s.id}')">
-      <div class="hhead"><span class="ht">${esc(s.title)}</span><span class="hd">${new Date(s.date).toLocaleDateString('pt-BR')}</span>
-      <button class="hdel" onclick="delSess(event,'${s.id}')">✕</button></div>
-      <div class="hprev">${esc((s.preview||'').slice(0,90))}${(s.preview||'').length>90?'…':''}</div>
-    </div>`).join('');
-}
-
-function loadSess(id) {
-  const s=S.sessions().find(x=>x.id===id); if(!s) return;
-  sessId=id; msgs=s.messages.slice();
-  const chat=document.getElementById('chat'); chat.innerHTML='';
-  msgs.forEach(m=>putBub(m.role,m.content));
-  renderHist(); swTab('manuais',document.querySelectorAll('.tab')[0]);
-}
-
-function delSess(e,id){e.stopPropagation();S.saveSess(S.sessions().filter(s=>s.id!==id));if(sessId===id)newChat();else renderHist();}
-function clearAll(){if(!confirm('Apagar todas as conversas?'))return;S.saveSess([]);renderHist();newChat();}
-
-function newChat() {
-  msgs=[]; sessId=null; triagem=null;
-  document.getElementById('inp').placeholder='Descreva a falha do equipamento...';
-  document.getElementById('chat').innerHTML=`
-    <div class="empty" id="emptyState">
-      <div class="eico">⚙️</div><h2>Assistente Técnico BG Service</h2>
-      <p>Selecione um sintoma ou clique no campo de texto para descrever a falha. A IA seleciona automaticamente o manual correto do equipamento.</p>
-      <div class="chips">
-        <div class="chip" onclick="iniciarTriagem('Plataforma não sobe')">Plataforma não sobe</div>
-        <div class="chip" onclick="iniciarTriagem('Motor não liga')">Motor não liga</div>
-        <div class="chip" onclick="iniciarTriagem('Erro de sobrecarga')">Erro de sobrecarga</div>
-        <div class="chip" onclick="iniciarTriagem('Falha hidráulica')">Falha hidráulica</div>
-        <div class="chip" onclick="iniciarTriagem('Alarme contínuo')">Alarme contínuo</div>
-        <div class="chip" onclick="iniciarTriagem('Bateria não carrega')">Bateria não carrega</div>
-        <div class="chip" onclick="iniciarTriagem('Braço oscila ao subir')">Braço oscila ao subir</div>
-        <div class="chip" onclick="iniciarTriagem('Controle sem resposta')">Controle sem resposta</div>
-      </div>
-    </div>`;
-  renderHist();
-}
-
-// ── INFO MÁQUINAS ─────────────────────────────────────
-function saveInfo(){
-  const txt=document.getElementById('infoTxt').value.trim(); if(!txt)return;
-  const all=S.infos(); all.unshift({id:Date.now().toString(),texto:txt,date:Date.now()});
-  if(all.length>50)all.length=50; S.saveInfos(all);
-  document.getElementById('infoTxt').value=''; renderInfos();
-  const n=document.getElementById('snote'); n.classList.add('show'); setTimeout(()=>n.classList.remove('show'),1800);
-}
-
-function renderInfos(){
-  const list=document.getElementById('iList'),all=S.infos();
-  if(!all.length){list.innerHTML='';return;}
-  list.innerHTML=all.map(i=>`
-    <div class="iblock">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;display:flex;justify-content:space-between;">
-        <span>${new Date(i.date).toLocaleString('pt-BR')}</span>
-        <button onclick="delInfo('${i.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;">✕</button>
-      </div>
-      <div style="font-size:11px;line-height:1.5;white-space:pre-wrap">${esc(i.texto)}</div>
-    </div>`).join('');
-}
-
-function delInfo(id){S.saveInfos(S.infos().filter(i=>i.id!==id));renderInfos();}
-
-function infoCtx(){
-  const all=S.infos(); if(!all.length)return'';
-  return'\n\nINFORMAÇÕES DAS MÁQUINAS:\n'+all.map(i=>`[${new Date(i.date).toLocaleDateString('pt-BR')}] ${i.texto}`).join('\n---\n');
-}
-
-// ── TRIAGEM ────────────────────────────────────────────
-// Estado da consulta atual
-let triagem = null; // { fabricante, modelo, serie, falha }
-
-function chip(el){ iniciarTriagem(el.textContent); }
-function hKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
-function aResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
-
-// Mostra formulário de triagem antes de consultar a IA
-function iniciarTriagem(falhaInicial='') {
-  if (!S.key()) { openModal(); return; }
-  document.getElementById('emptyState')?.remove();
-
-  // Lista de fabricantes/modelos extraída dos nomes dos manuais
-  const manuais = allManuais();
-  const nomes = manuais.map(m => m.name).join('\n');
-
-  const formId = 'triagem-' + Date.now();
-  const div = document.createElement('div');
-  div.id = formId;
-  div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:11px;padding:18px;margin:4px 0;animation:fu .25s ease';
-  div.innerHTML = `
-    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">
-      🔧 Nova Consulta Técnica
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">FABRICANTE</div>
-        <input id="${formId}-fab" list="${formId}-fab-list" placeholder="Ex: JLG, Skyjack, Haulotte..."
-          style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
-          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
-        <datalist id="${formId}-fab-list">
-          <option value="JLG"><option value="Skyjack"><option value="Haulotte">
-          <option value="Genie"><option value="Manitou"><option value="Compact">
-        </datalist>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">MODELO</div>
-        <input id="${formId}-mod" placeholder="Ex: 450AJ, SJ3219, Compact 12..."
-          style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
-          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-    </div>
-    <div style="margin-bottom:10px">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">Nº DE SÉRIE <span style="color:var(--muted);font-size:9px">(opcional)</span></div>
-      <input id="${formId}-serie" placeholder="Ex: SJ3219-123456"
-        style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
-        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
-    </div>
-    <div style="margin-bottom:14px">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-family:'DM Mono',monospace;letter-spacing:.5px">DESCRIÇÃO DA FALHA</div>
-      <textarea id="${formId}-falha" rows="2" placeholder="Descreva o sintoma ou código de erro..."
-        style="width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;line-height:1.5"
-        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">${falhaInicial}</textarea>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="submitTriagem('${formId}')"
-        style="flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
-        🔍 Diagnosticar
-      </button>
-      <button onclick="document.getElementById('${formId}').remove()"
-        style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">
-        Cancelar
-      </button>
-    </div>`;
-
-  document.getElementById('chat').appendChild(div);
-  scroll();
-  document.getElementById(formId+'-fab').focus();
-}
-
-async function submitTriagem(formId) {
-  const fab   = document.getElementById(formId+'-fab').value.trim();
-  const mod   = document.getElementById(formId+'-mod').value.trim();
-  const serie = document.getElementById(formId+'-serie').value.trim();
-  const falha = document.getElementById(formId+'-falha').value.trim();
-
-  if (!fab || !mod || !falha) {
-    alert('Preencha pelo menos Fabricante, Modelo e a Falha.');
-    return;
-  }
-
-  triagem = { fabricante:fab, modelo:mod, serie, falha };
-
-  // Remove o formulário
-  document.getElementById(formId).remove();
-
-  // Monta mensagem resumo visível
-  const resumo = `🏗️ ${fab} ${mod}${serie?' · S/N: '+serie:''}\n❗ ${falha}`;
-  putBub('usr', resumo);
-
-  // Seleciona manual relevante
-  const manualSelecionado = selecionarManual(fab, mod);
-
-  const pergunta = `Equipamento: ${fab} ${mod}${serie?' (Nº Série: '+serie+')':''}.\nFalha relatada: ${falha}`;
-  msgs.push({ role:'user', content:pergunta });
-
-  await chamarIA(manualSelecionado);
-}
-
-function selecionarManual(fabricante, modelo) {
-  const manuais = allManuais();
-  if (!manuais.length) return null;
-
-  const termos = [fabricante, modelo].map(t => t.toLowerCase());
-
-  // Pontua cada manual pela quantidade de termos que o nome contém
-  const pontuados = manuais.map(m => {
-    const nome = m.name.toLowerCase();
-    const pts  = termos.reduce((acc, t) => acc + (nome.includes(t) ? 1 : 0), 0);
-    return { m, pts };
-  });
-
-  pontuados.sort((a,b) => b.pts - a.pts);
-
-  // Se o melhor tem pelo menos 1 match, usa ele
-  // Se empate no topo, pega os 2 primeiros
-  const melhor = pontuados[0];
-  if (melhor.pts === 0) return null; // nenhum match, sem manual
-
-  const selecionados = pontuados.filter(p => p.pts === melhor.pts).slice(0, 2);
-  return selecionados.map(p => p.m);
-}
-
-async function chamarIA(manuaisSelecionados) {
-  loading=true; document.getElementById('sbtn').disabled=true;
-  const {bubble}=mkAiBub();
-
-  // Avisa qual manual está sendo usado
-  if (manuaisSelecionados && manuaisSelecionados.length) {
-    const nomes = manuaisSelecionados.map(m=>m.name).join(', ');
-    bubble.innerHTML = `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">📖 Consultando: ${esc(nomes)}</span><br><br>`;
-  } else {
-    bubble.innerHTML = `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">⚠️ Nenhum manual específico encontrado — usando conhecimento geral</span><br><br>`;
-  }
-
-  try {
-    const resp=await fetch(API_URL,{
+function closeModal(){document.getElementById('ov').classList.add('hide');}
+async function saveKey(){
+  const k=document.getElementById('ki').value.trim();
+  if(!k){showKS('er','Cole a chave antes de salvar');return;}
+  if(!k.startsWith('sk-ant-')){showKS('er','Chave invalida - deve comecar com sk-ant-');return;}
+  showKS('no','Verificando...');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':S.key(),
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-5',
-        max_tokens:1500,
-        stream:true,
-        system:buildSys(manuaisSelecionados),
-        messages:msgs
-      })
+      headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:5,messages:[{role:'user',content:'ok'}]})
     });
+    const d=await r.json();
+    if(d.error){showKS('er','Invalida: '+d.error.message);return;}
+    G.setKey(k);showKS('ok','Chave valida!');updApi();
+    setTimeout(closeModal,800);
+  }catch(e){showKS('er','Erro de conexao');}
+}
+function showKS(t,m){
+  const el=document.getElementById('kst');el.style.display='flex';
+  document.getElementById('kd').className='kd '+t;
+  document.getElementById('km').textContent=m;
+}
+function updApi(){
+  const k=G.key();
+  document.getElementById('adi').className='ad '+(k?'ok':'er');
+  document.getElementById('all').textContent=k?'IA conectada':'sem chave';
+}
 
+// ═══ TABS ═══
+function swT(n,b){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pan').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');document.getElementById('tab-'+n).classList.add('on');
+}
+
+// ═══ PDF UPLOAD ═══
+const uz=document.getElementById('uz'),fi=document.getElementById('fi');
+['dragover','dragleave','drop'].forEach(t=>uz.addEventListener(t,e=>{
+  e.preventDefault();uz.classList.toggle('ov2',t==='dragover');
+  if(t==='drop')handleFiles(e.dataTransfer.files);
+}));
+fi.addEventListener('change',e=>handleFiles(e.target.files));
+
+async function handleFiles(files){
+  for(const f of files){
+    if(uploads.find(m=>m.name===f.name))continue;
+    const tid='p'+Date.now();addProg(tid,f.name);
+    try{
+      const content=await readFile(f,p=>updProg(tid,p));
+      uploads.push({name:f.name,content,size:f.size,date:Date.now()});
+      G.setMans(uploads);
+    }catch(e){console.error(e);}
+    remProg(tid);renderM();updSt();
+  }
+}
+
+function addProg(id,nome){
+  const list=document.getElementById('ml');
+  const d=document.createElement('div');d.id=id;d.className='mi';
+  d.style.flexDirection='column';d.style.alignItems='flex-start';d.style.gap='5px';
+  d.innerHTML='<div style="display:flex;align-items:center;gap:7px;width:100%"><span class="ic">&#9203;</span><div class="nm"><b>'+esc(nome)+'</b><small>Extraindo texto PDF...</small></div></div><div class="pg"><div id="'+id+'-b" class="pgb"></div></div>';
+  list.appendChild(d);
+}
+function updProg(id,p){const b=document.getElementById(id+'-b');if(b)b.style.width=p+'%';}
+function remProg(id){document.getElementById(id)?.remove();}
+
+async function readFile(f,onP){
+  if(f.name.toLowerCase().endsWith('.pdf')||f.type==='application/pdf')return extractPDF(f,onP);
+  return new Promise(res=>{const r=new FileReader();r.readAsText(f,'UTF-8');r.onload=()=>{onP&&onP(100);res(r.result.slice(0,60000));};});
+}
+
+async function extractPDF(file,onP){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();r.readAsArrayBuffer(file);
+    r.onload=async()=>{
+      try{
+        const pdf=await pdfjsLib.getDocument({data:new Uint8Array(r.result)}).promise;
+        const tot=pdf.numPages;let txt='[PDF: '+file.name+' - '+tot+' paginas]\n\n';
+        for(let i=1;i<=tot;i++){
+          const pg=await pdf.getPage(i);
+          const tc=await pg.getTextContent();
+          let pt='',ly=null;
+          for(const it of tc.items){
+            if(ly!==null&&Math.abs(it.transform[5]-ly)>5)pt+='\n';
+            pt+=it.str+' ';ly=it.transform[5];
+          }
+          txt+='--- Pagina '+i+' ---\n'+pt.trim()+'\n\n';
+          onP&&onP(Math.round(i/tot*100));
+          if(txt.length>80000){txt+='\n[Truncado em '+i+' de '+tot+' paginas]';break;}
+        }
+        res(txt);
+      }catch(e){rej(e);}
+    };r.onerror=rej;
+  });
+}
+
+function renderM(){
+  const list=document.getElementById('ml');
+  const fh=FIXOS.map(m=>'<div class="mi"><span class="ic">&#128216;</span><div class="nm"><b>'+esc(m.name)+'</b><small>Fixo</small></div><span class="bfx">fixo</span></div>').join('');
+  const uh=uploads.map((m,i)=>{
+    const pm=m.content.match(/(\d+) paginas/);
+    const inf=pm?pm[1]+' pag.':(m.size/1024).toFixed(0)+' KB';
+    const q=m.content.length>3000?'<span style="color:var(--ok);font-size:9px">ok</span>':'<span style="color:var(--er);font-size:9px">pouco texto</span>';
+    return '<div class="mi"><span class="ic">&#128196;</span><div class="nm"><b>'+esc(m.name)+'</b><small>'+inf+' &middot; '+m.content.length.toLocaleString()+' chars '+q+'</small></div><button class="rm" onclick="remM('+i+')">&#10005;</button></div>';
+  }).join('');
+  list.innerHTML=fh+uh||'<div style="font-size:11px;color:var(--mut);text-align:center;padding:10px 0">Nenhum manual ainda</div>';
+}
+function remM(i){uploads.splice(i,1);G.setMans(uploads);renderM();updSt();}
+function updSt(){const n=allM().length;document.getElementById('sc').textContent=n+(n===1?' manual':' manuais');}
+
+// ═══ HISTORICO ═══
+function saveSess(){
+  if(!msgs.length)return;
+  const all=G.sess();const id=sessId||Date.now().toString();sessId=id;
+  const first=msgs.find(m=>m.role==='user')?.content||'Consulta';
+  const last=msgs[msgs.length-1]?.content||'';
+  const idx=all.findIndex(s=>s.id===id);
+  const obj={id,title:first.slice(0,55),date:Date.now(),messages:msgs.slice(),preview:last.slice(0,90)};
+  if(idx>=0)all[idx]=obj;else all.unshift(obj);
+  if(all.length>30)all.length=30;
+  G.setSess(all);renderH();
+}
+function renderH(){
+  const list=document.getElementById('hl'),all=G.sess();
+  if(!all.length){list.innerHTML='<div class="hem">Nenhuma conversa ainda</div>';return;}
+  list.innerHTML=all.map(s=>'<div class="hs'+(s.id===sessId?' on':'')+'" onclick="loadS(\''+s.id+'\')"><div class="hh"><span class="ht">'+esc(s.title)+'</span><span class="hd">'+new Date(s.date).toLocaleDateString('pt-BR')+'</span><button class="hx" onclick="delS(event,\''+s.id+'\')">&#10005;</button></div><div class="hp">'+esc((s.preview||'').slice(0,80))+'</div></div>').join('');
+}
+function loadS(id){
+  const s=G.sess().find(x=>x.id===id);if(!s)return;
+  sessId=id;msgs=s.messages.slice();triagem=null;
+  const c=document.getElementById('chat');c.innerHTML='';
+  msgs.forEach(m=>putB(m.role,m.content));
+  renderH();swT('man',document.querySelectorAll('.tab')[0]);
+}
+function delS(e,id){e.stopPropagation();G.setSess(G.sess().filter(s=>s.id!==id));if(sessId===id)newChat();else renderH();}
+function clearAll(){if(!confirm('Apagar todas as conversas?'))return;G.setSess([]);renderH();newChat();}
+
+function newChat(){
+  msgs=[];sessId=null;triagem=null;
+  document.getElementById('inp').placeholder='Descreva a falha ou clique em Nova Consulta...';
+  document.getElementById('chat').innerHTML='<div class="emp" id="es"><div class="ei">&#9881;</div><h2>Assistente Tecnico BG Service</h2><p>Selecione um sintoma ou descreva a falha. A IA seleciona o manual correto automaticamente.</p><div class="cps"><div class="cp" onclick="abrirForm(\'Plataforma nao sobe\')">Plataforma nao sobe</div><div class="cp" onclick="abrirForm(\'Motor nao liga\')">Motor nao liga</div><div class="cp" onclick="abrirForm(\'Erro de sobrecarga\')">Erro de sobrecarga</div><div class="cp" onclick="abrirForm(\'Falha hidraulica\')">Falha hidraulica</div><div class="cp" onclick="abrirForm(\'Alarme continuo\')">Alarme continuo</div><div class="cp" onclick="abrirForm(\'Bateria nao carrega\')">Bateria nao carrega</div></div></div>';
+  renderH();
+}
+
+// ═══ INFO MAQUINAS ═══
+function saveInfo(){
+  const t=document.getElementById('itx').value.trim();if(!t)return;
+  const all=G.info();all.unshift({id:Date.now().toString(),texto:t,date:Date.now()});
+  if(all.length>50)all.length=50;G.setInfo(all);
+  document.getElementById('itx').value='';renderI();
+  const n=document.getElementById('sn');n.classList.add('show');setTimeout(()=>n.classList.remove('show'),1800);
+}
+function renderI(){
+  const list=document.getElementById('il'),all=G.info();
+  if(!all.length){list.innerHTML='';return;}
+  list.innerHTML=all.map(i=>'<div class="ib"><div style="font-size:10px;color:var(--mut);margin-bottom:5px;display:flex;justify-content:space-between;font-family:\'DM Mono\',monospace"><span>'+new Date(i.date).toLocaleDateString('pt-BR')+'</span><button onclick="delI(\''+i.id+'\')" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:11px;">&#10005;</button></div><div style="font-size:11px;line-height:1.5;white-space:pre-wrap">'+esc(i.texto)+'</div></div>').join('');
+}
+function delI(id){G.setInfo(G.info().filter(i=>i.id!==id));renderI();}
+function infoCtx(){
+  const all=G.info();if(!all.length)return'';
+  return'\n\nINFORMACOES DAS MAQUINAS:\n'+all.map(i=>'['+new Date(i.date).toLocaleDateString('pt-BR')+'] '+i.texto).join('\n---\n');
+}
+
+// ═══ TRIAGEM ═══
+function abrirForm(falha=''){
+  if(!G.key()){openModal();return;}
+  document.getElementById('es')?.remove();
+  const id='f'+Date.now();
+  const d=document.createElement('div');d.id=id;d.className='tf';
+  d.innerHTML='<div class="tl">Nova Consulta Tecnica</div><div class="tg"><div><div class="fl">Fabricante</div><input id="'+id+'-f" list="'+id+'-fl" placeholder="JLG, Haulotte, Skyjack..."><datalist id="'+id+'-fl"><option value="JLG"><option value="Haulotte"><option value="Skyjack"><option value="Genie"><option value="Manitou"><option value="Compact"></datalist></div><div><div class="fl">Modelo</div><input id="'+id+'-m" placeholder="450AJ, H23TPX, 3219..."></div></div><div style="margin-bottom:8px"><div class="fl">N de Serie <span style="font-size:9px">(opcional)</span></div><input id="'+id+'-s" placeholder="Ex: 12345-ABC"></div><div><div class="fl">Descricao da Falha</div><textarea id="'+id+'-fa" rows="2" placeholder="Descreva o sintoma ou codigo de erro...">'+esc(falha)+'</textarea></div><div class="ta"><button class="br" onclick="submitForm(\''+id+'\')">Diagnosticar</button><button class="bg" onclick="document.getElementById(\''+id+'\').remove()">Cancelar</button></div>';
+  document.getElementById('chat').appendChild(d);
+  scroll();
+  document.getElementById(id+'-f').focus();
+}
+
+async function submitForm(id){
+  const fab=document.getElementById(id+'-f').value.trim();
+  const mod=document.getElementById(id+'-m').value.trim();
+  const ser=document.getElementById(id+'-s').value.trim();
+  const fal=document.getElementById(id+'-fa').value.trim();
+  if(!fab||!mod||!fal){alert('Preencha Fabricante, Modelo e a Falha.');return;}
+  triagem={fab,mod,ser,fal};
+  document.getElementById(id).remove();
+  const res='Equipamento: '+fab+' '+mod+(ser?' | S/N: '+ser:'')+'\nFalha: '+fal;
+  putB('u',res);
+  msgs.push({role:'user',content:'Equipamento: '+fab+' '+mod+(ser?' (Serie: '+ser+')':'')+'. Falha: '+fal});
+  await callIA(selectM(fab,mod));
+}
+
+function selectM(fab,mod){
+  const all=allM();if(!all.length)return null;
+  const terms=[fab,mod].map(t=>t.toLowerCase().trim()).filter(Boolean);
+  const scored=all.map(m=>{
+    const n=m.name.toLowerCase();
+    const pts=terms.reduce((a,t)=>a+(n.includes(t)?2:0),0);
+    return{m,pts};
+  });
+  scored.sort((a,b)=>b.pts-a.pts);
+  if(scored[0].pts===0)return null;
+  return scored.filter(x=>x.pts===scored[0].pts).slice(0,2).map(x=>x.m);
+}
+
+async function callIA(mans){
+  loading=true;document.getElementById('sbt').disabled=true;
+  const{bubble}=mkB();
+  const info=mans&&mans.length?'Consultando: '+mans.map(m=>m.name).join(', '):'Sem manual especifico - usando conhecimento geral';
+  bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':G.key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,stream:true,system:buildSys(mans),messages:msgs})
+    });
     let full='';
-    const reader=resp.body.getReader(), dec=new TextDecoder();
-    const cur=document.createElement('span'); cur.className='cursor'; bubble.appendChild(cur);
-
+    const reader=resp.body.getReader(),dec=new TextDecoder();
+    const cur=document.createElement('span');cur.className='cur';bubble.appendChild(cur);
     while(true){
-      const {done,value}=await reader.read(); if(done)break;
+      const{done,value}=await reader.read();if(done)break;
       const lines=dec.decode(value,{stream:true}).split('\n').filter(l=>l.startsWith('data: '));
       for(const line of lines){
-        const d=line.slice(6); if(d==='[DONE]')continue;
+        const d=line.slice(6);if(d==='[DONE]')continue;
         try{
           const delta=JSON.parse(d).delta?.text||'';
-          if(delta){
-            full+=delta;
-            cur.remove();
-            // Mantém o aviso do manual no topo
-            const aviso = bubble.querySelector('span');
-            bubble.innerHTML = (aviso ? aviso.outerHTML+'<br><br>' : '') + fmtAI(full);
-            bubble.appendChild(cur);
-            scroll();
-          }
+          if(delta){full+=delta;cur.remove();bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>'+fmt(full);bubble.appendChild(cur);scroll();}
         }catch{}
       }
     }
-    cur.remove();
-    const aviso = bubble.querySelector('span');
-    bubble.innerHTML = (aviso ? aviso.outerHTML+'<br><br>' : '') + fmtAI(full);
-
-    msgs.push({role:'assistant',content:full});
-    saveSession();
-
-    // Após resposta, mostra botão para nova pergunta sobre o mesmo equipamento
-    const followDiv = document.createElement('div');
-    followDiv.style.cssText='display:flex;gap:8px;margin-top:4px;flex-wrap:wrap';
-    followDiv.innerHTML=`
-      <button onclick="followUp()" style="background:var(--surf2);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-        💬 Pergunta adicional sobre este equipamento
-      </button>
-      <button onclick="iniciarTriagem()" style="background:var(--surf2);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-        🔧 Nova consulta (outro equipamento)
-      </button>`;
-    document.getElementById('chat').appendChild(followDiv);
-    scroll();
-
-  } catch(err) {
-    bubble.innerHTML='⚠️ Erro de conexão. Verifique a API Key e tente novamente.';
-    console.error(err);
+    cur.remove();bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>'+fmt(full);
+    msgs.push({role:'assistant',content:full});saveSess();
+    // Botoes de followup
+    const fd=document.createElement('div');fd.style.cssText='display:flex;gap:7px;margin-top:2px;flex-wrap:wrap';
+    fd.innerHTML='<div class="cp" onclick="followUp()">Pergunta adicional</div><div class="cp" onclick="abrirForm()">Nova consulta</div>';
+    document.getElementById('chat').appendChild(fd);scroll();
+  }catch(e){
+    bubble.innerHTML='Erro de conexao. Verifique a API Key.';console.error(e);
   }
-  loading=false; document.getElementById('sbtn').disabled=false;
+  loading=false;document.getElementById('sbt').disabled=false;scroll();
 }
 
-// Pergunta adicional sobre o mesmo equipamento (sem refazer triagem)
-function followUp() {
-  const inp = document.getElementById('inp');
-  inp.placeholder = `Pergunta adicional sobre ${triagem?.fabricante||''} ${triagem?.modelo||''}...`;
-  inp.focus();
-}
+function followUp(){document.getElementById('inp').focus();}
 
-async function send() {
-  const key=S.key(); if(!key){openModal();return;}
-
-  // Se não tem triagem ativa, abre formulário
-  if (!triagem) { iniciarTriagem(); return; }
-
+async function sendMsg(){
+  if(!G.key()){openModal();return;}
+  if(!triagem){abrirForm();return;}
   const inp=document.getElementById('inp');
-  const txt=inp.value.trim(); if(!txt||loading)return;
-
-  putBub('usr',txt);
-  msgs.push({role:'user',content:txt});
-  inp.value=''; inp.style.height='auto';
-  inp.placeholder='Descreva a falha do equipamento...';
-
-  // Reutiliza o manual já selecionado para follow-up
-  const manualSelecionado = selecionarManual(triagem.fabricante, triagem.modelo);
-  await chamarIA(manualSelecionado);
+  const txt=inp.value.trim();if(!txt||loading)return;
+  putB('u',txt);msgs.push({role:'user',content:txt});
+  inp.value='';inp.style.height='auto';
+  await callIA(selectM(triagem.fab,triagem.mod));
 }
 
-function buildSys(manuaisSelecionados){
-  let base=`Você é o Assistente Técnico da BG Service, especializado em manutenção de plataformas elevatórias e equipamentos de construção.
-
-Ajude técnicos em campo a diagnosticar falhas com rapidez e precisão.
-
-FORMATO DE RESPOSTA:
-**🔍 DIAGNÓSTICO PROVÁVEL:** causa mais provável
-**⚠️ POSSÍVEIS CAUSAS:** em ordem de probabilidade
-**🛠️ PROCEDIMENTO DE TESTE:** passos numerados
-**✅ SOLUÇÃO RECOMENDADA:** ação a tomar
-**🔒 SEGURANÇA:** alertas críticos se houver risco
-
-Seja direto e técnico. O técnico está em campo com o equipamento à frente.`;
-
+function buildSys(mans){
+  let base='Voce e o Assistente Tecnico da BG Service, especializado em manutencao de plataformas elevatorias e equipamentos de construcao.\n\nAjude tecnicos em campo a diagnosticar falhas com rapidez e precisao.\n\nFORMATO DE RESPOSTA OBRIGATORIO:\n**DIAGNOSTICO PROVAVEL:** causa mais provavel\n**POSSIVEIS CAUSAS:** em ordem de probabilidade\n**PROCEDIMENTO DE TESTE:** passos numerados\n**SOLUCAO RECOMENDADA:** acao a tomar\n**SEGURANCA:** alertas criticos se houver risco\n\nSeja direto e tecnico. O tecnico esta em campo com o equipamento a frente.';
   base+=infoCtx();
-
-  if(!manuaisSelecionados || !manuaisSelecionados.length){
-    return base+'\n\nAVISO: Nenhum manual específico encontrado para este equipamento. Use conhecimento geral sobre plataformas elevatórias.';
-  }
-
-  const txt=manuaisSelecionados.map((m,i)=>`=== MANUAL ${i+1}: ${m.name} ===\n${m.content}`).join('\n\n');
-  return base+`\n\nBASE DE CONHECIMENTO (manual selecionado automaticamente):\n${txt}\n\nPRIORIZE as informações do manual. Cite o manual ao usar informação específica.`;
+  if(!mans||!mans.length)return base+'\n\nAVISO: Nenhum manual especifico encontrado. Use conhecimento geral sobre plataformas elevatorias.';
+  const txt=mans.map((m,i)=>'=== MANUAL '+(i+1)+': '+m.name+' ===\n'+m.content).join('\n\n');
+  return base+'\n\nBASE DE CONHECIMENTO (manual selecionado para este equipamento):\n'+txt+'\n\nPRIORIZE as informacoes do manual. Cite o manual ao usar informacao especifica.';
 }
 
-// ── RENDER ────────────────────────────────────────────
-function putBub(role,text){
-  const chat=document.getElementById('chat'), d=document.createElement('div');
-  d.className='msg '+(role==='usr'?'usr':'ai');
-  d.innerHTML=`<div class="av">${role==='usr'?'👷':'🔧'}</div><div class="bub">${role==='ai'?fmtAI(text):esc(text)}</div>`;
-  chat.appendChild(d); scroll();
+// ═══ RENDER ═══
+function putB(role,text){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg '+(role==='u'?'u':'a');
+  d.innerHTML='<div class="av">'+(role==='u'?'&#128119;':'&#128296;')+'</div><div class="bub">'+(role==='a'?fmt(text):esc(text))+'</div>';
+  c.appendChild(d);scroll();
 }
-
-function mkAiBub(){
-  const chat=document.getElementById('chat'), d=document.createElement('div'); d.className='msg ai';
-  const b=document.createElement('div'); b.className='bub';
-  b.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
-  d.innerHTML='<div class="av">🔧</div>'; d.appendChild(b); chat.appendChild(d); scroll();
+function mkB(){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg a';
+  const b=document.createElement('div');b.className='bub';
+  b.innerHTML='<div class="dts"><span></span><span></span><span></span></div>';
+  d.innerHTML='<div class="av">&#128296;</div>';d.appendChild(b);c.appendChild(d);scroll();
   return{div:d,bubble:b};
 }
-
-function fmtAI(t){
+function fmt(t){
   t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   t=t.replace(/^\*\*([^*\n]+)\*\*:?\s*$/gm,'<span class="sh">$1</span>');
   t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
   t=t.replace(/^(\d+)\.\s+/gm,'<br><strong style="color:var(--red)">$1.</strong> ');
-  t=t.replace(/^[-•]\s+/gm,'<br>• ');
+  t=t.replace(/^[-]\s+/gm,'<br>&bull; ');
   t=t.replace(/\n/g,'<br>');
   return t;
 }
-
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function scroll(){const c=document.getElementById('chat');c.scrollTop=c.scrollHeight;}
 
-// ── INIT ──────────────────────────────────────────────
+// ═══ INIT ═══
 window.addEventListener('DOMContentLoaded',()=>{
-  uploads=S.manuais(); renderManuais(); updStatus();
-  renderHist(); renderInfos(); updateApiIndicator();
-  // Abre modal se não tiver chave ainda
-  if (!S.key()) openModal();
-  else document.getElementById('btnSkip').style.display='block';
+  uploads=G.mans();renderM();updSt();renderH();renderI();updApi();
+  if(!G.key())openModal();
+  else document.getElementById('bsk').style.display='block';
 });
 </script>
 </body>
