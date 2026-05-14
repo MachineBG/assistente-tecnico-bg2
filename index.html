@@ -404,7 +404,15 @@ async function extractPDF(file,onP){
             if(ly!==null&&Math.abs(it.transform[5]-ly)>5)pt+='\n';
             pt+=it.str+' ';ly=it.transform[5];
           }
-          txt+='--- Pagina '+i+' ---\n'+pt.trim()+'\n\n';
+          // Corrige texto com letras duplicadas (ex: "H Ha au ul lo ot tt te e")
+          let clean=pt.trim();
+          // Remove espacos extras entre letras duplicadas
+          clean=clean.replace(/(\b\w)\s+\1/g,'$1'); // remove char duplicado com espaco
+          clean=clean.replace(/([A-Za-z])\1+/g,'$1'); // remove char repetido consecutivo
+          // Remove espacos excessivos entre letras simples (texto espaçado tipo "H a u l o t t e")
+          clean=clean.replace(/\b([A-Za-zÀ-ú])\s([A-Za-zÀ-ú])\s([A-Za-zÀ-ú])\s([A-Za-zÀ-ú])/g,'$1$2$3$4');
+          clean=clean.replace(/  +/g,' ');
+          txt+='--- Pagina '+i+' ---\n'+clean+'\n\n';
           onP&&onP(Math.round(i/tot*100));
           if(txt.length>80000){txt+='\n[Truncado em '+i+' de '+tot+' paginas]';break;}
         }
@@ -509,17 +517,24 @@ async function submitForm(id){
 
 // Indice de manuais: extrai fabricante/modelo do conteudo
 // Roda uma vez por manual quando carregado, salva no proprio objeto
+function cleanText(t){
+  t=t.replace(/([A-Za-zÀ-ú])\1+/g,'$1');
+  t=t.replace(/\b([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú])\b/g,'$1$2$3$4');
+  t=t.replace(/\b([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú])\b/g,'$1$2$3');
+  t=t.replace(/  +/g,' ');
+  return t.toLowerCase();
+}
+
 function buildIndex(manual){
-  if(manual.index)return; // ja indexado
-  // Pega as primeiras 3000 chars (capa/indice do manual)
-  const preview=manual.content.slice(0,3000).toLowerCase();
-  // Fabricantes conhecidos
-  const fabs=['haulotte','jlg','skyjack','genie','manitou','compact','terex','niftylift','toucan','upright','snorkel'];
-  const found=fabs.filter(f=>preview.includes(f));
-  // Extrai palavras que podem ser modelos (maiusculas, alfanumericas, 3-10 chars)
-  const rawModels=manual.content.slice(0,2000).match(/\b[A-Z0-9]{2,4}[\s\-]?[A-Z0-9]{2,6}\b/g)||[];
-  const models=[...new Set(rawModels)].slice(0,15);
-  manual.index={fabricantes:found,modelos:models.map(m=>m.toLowerCase()),preview:preview.slice(0,500)};
+  if(manual.index)return;
+  const preview=cleanText(manual.content.slice(0,4000));
+  const fullClean=cleanText(manual.content.slice(0,8000));
+  const fabs=['haulotte','jlg','skyjack','genie','manitou','compact','terex','niftylift','toucan','upright','snorkel','star','optimum','ha16','ha18','ha20'];
+  const found=fabs.filter(f=>preview.includes(f)||fullClean.includes(f));
+  const rawModels=manual.content.slice(0,3000).match(/\b[A-Z][A-Z0-9]{1,3}[\s\-]?[0-9]{1,4}[A-Z]{0,3}\b/g)||[];
+  const models=[...new Set(rawModels)].slice(0,20);
+  manual.index={fabricantes:found,modelos:models.map(m=>m.toLowerCase()),preview:preview.slice(0,600)};
+  console.log('Index:',manual.name.slice(0,40),'->',found,models.slice(0,5));
 }
 
 function selectM(fab,mod){
@@ -537,23 +552,18 @@ function selectM(fab,mod){
     let pts=0;
     const idx=m.index||{fabricantes:[],modelos:[],preview:''};
     const nameL=m.name.toLowerCase();
-    const contentL=m.content.slice(0,5000).toLowerCase();
+    const contentClean=cleanText(m.content.slice(0,8000));
 
-    // Fabricante no indice ou nome
     if(idx.fabricantes.includes(fabL))pts+=10;
     if(nameL.includes(fabL))pts+=5;
-    if(contentL.includes(fabL))pts+=3;
-
-    // Modelo exato no indice, nome ou conteudo
+    if(contentClean.includes(fabL))pts+=3;
     if(idx.modelos.some(x=>x.includes(modL)||modL.includes(x)))pts+=10;
     if(nameL.includes(modL))pts+=5;
-    if(contentL.includes(modL))pts+=4;
-
-    // Palavras parciais do modelo
+    if(contentClean.includes(modL))pts+=4;
     modWords.forEach(w=>{
       if(idx.modelos.some(x=>x.includes(w)))pts+=3;
       if(nameL.includes(w))pts+=2;
-      if(contentL.includes(w))pts+=1;
+      if(contentClean.includes(w))pts+=1;
     });
 
     return{m,pts};
@@ -673,9 +683,9 @@ function scroll(){const c=document.getElementById('chat');c.scrollTop=c.scrollHe
 // ═══ INIT ═══
 window.addEventListener('DOMContentLoaded',()=>{
   uploads=G.mans();
-  // Reconstroi indice de todos os manuais ja salvos
-  uploads.forEach(m=>buildIndex(m));
-  G.setMans(uploads); // salva com indice
+  // Força reindexacao com cleanText (remove indice antigo)
+  uploads.forEach(m=>{delete m.index; buildIndex(m);});
+  G.setMans(uploads);
   renderM();updSt();renderH();renderI();updApi();
   if(!G.key())openModal();
   else document.getElementById('bsk').style.display='block';
