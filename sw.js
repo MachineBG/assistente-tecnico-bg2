@@ -26,8 +26,12 @@ self.addEventListener('activate', e => {
 
 // Serve do cache, busca na rede se não tiver
 self.addEventListener('fetch', e => {
-  // Requisições à API da Anthropic sempre vão para a rede
-  if (e.request.url.includes('api.anthropic.com')) return;
+  const url = e.request.url;
+  
+  // Nunca intercepta: API Anthropic, API GitHub, requisições POST/PUT/DELETE
+  if (url.includes('api.anthropic.com')) return;
+  if (url.includes('api.github.com')) return;
+  if (e.request.method !== 'GET') return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
