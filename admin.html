@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BG Service — Painel Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{--bg:#111;--sur:#1a1a1a;--su2:#222;--bdr:#2e2e2e;--red:#cc0000;--rd2:#e62020;--txt:#f0f0f0;--mut:#666;--ok:#2ecc71;--er:#e74c3c;--warn:#f39c12}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-height:100vh}
+header{background:#0a0a0a;border-bottom:2px solid var(--red);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo img{height:30px;object-fit:contain}
+.logo-fb{font-size:20px;font-weight:800;color:#fff;display:none}.logo-fb span{color:var(--red)}
+.logo-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--mut);letter-spacing:1px}
+.badge{background:var(--warn);color:#000;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:'DM Mono',monospace}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:20px}
+.login-box{background:var(--sur);border:1px solid var(--bdr);border-top:3px solid var(--red);border-radius:14px;padding:32px;max-width:420px;width:100%}
+.login-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.login-box p{font-size:13px;color:var(--mut);margin-bottom:20px;line-height:1.5}
+
+/* MAIN ADMIN */
+.admin-wrap{display:none;padding:24px;max-width:1100px;margin:0 auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:768px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--bdr)}
+.card h3 .ico{font-size:18px}
+
+/* FORMS */
+.fl{font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;display:block}
+input,select,textarea{width:100%;background:var(--su2);border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;margin-bottom:10px}
+input:focus,select:focus,textarea:focus{border-color:var(--red)}
+input::placeholder,textarea::placeholder{color:var(--mut)}
+.br{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;width:100%}
+.br:hover{background:var(--rd2)}
+.br.sm{width:auto;padding:6px 14px;font-size:12px}
+.br.ok{background:#27ae60}.br.ok:hover{background:#219a52}
+.br.danger{background:var(--er)}.br.danger:hover{background:#c0392b}
+.bg{background:none;border:1px solid var(--bdr);color:var(--mut);border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:6px}
+
+/* USERS TABLE */
+.utbl{width:100%;border-collapse:collapse}
+.utbl th{font-family:'DM Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--bdr)}
+.utbl td{padding:10px;font-size:13px;border-bottom:1px solid var(--bdr)}
+.utbl tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-family:'DM Mono',monospace}
+.pill.ok{background:rgba(46,204,113,.15);color:var(--ok);border:1px solid rgba(46,204,113,.3)}
+.pill.off{background:rgba(102,102,102,.15);color:var(--mut);border:1px solid var(--bdr)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--su2);border:1px solid var(--bdr);border-radius:10px;padding:14px;text-align:center}
+.stat .val{font-size:28px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace}
+.stat .lbl{font-size:11px;color:var(--mut);margin-top:4px}
+
+/* CASOS */
+.caso-item{background:var(--su2);border:1px solid var(--bdr);border-left:3px solid var(--ok);border-radius:8px;padding:12px;margin-bottom:8px}
+.caso-item .ci-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.caso-item .ci-equip{font-size:12px;font-weight:700;color:var(--red)}
+.caso-item .ci-date{font-size:10px;color:var(--mut);font-family:'DM Mono',monospace}
+.caso-item .ci-falha{font-size:12px;color:var(--txt);margin-bottom:4px}
+.caso-item .ci-tec{font-size:10px;color:var(--mut)}
+
+/* STATUS */
+.status-bar{background:var(--su2);border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sdot.ok{background:var(--ok)}.sdot.er{background:var(--er)}.sdot.no{background:var(--mut)}
+
+/* MANUAIS */
+.manual-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--su2);border:1px solid var(--bdr);border-left:3px solid var(--red);border-radius:7px;margin-bottom:6px}
+.manual-item .mn{flex:1;min-width:0}
+.manual-item .mn b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.manual-item .mn small{color:var(--mut);font-size:10px}
+.rm-btn{background:none;border:none;color:var(--mut);cursor:pointer;font-size:14px;transition:color .15s;flex-shrink:0}
+.rm-btn:hover{color:var(--er)}
+
+/* MISC */
+.sep{border:none;border-top:1px solid var(--bdr);margin:16px 0}
+.hint{font-size:11px;color:var(--mut);line-height:1.6;margin-bottom:10px}
+.hint code{background:rgba(204,0,0,.15);color:var(--red);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px}
+.alert.ok{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);color:var(--ok)}
+.alert.er{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:var(--er)}
+.alert.warn{background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.3);color:var(--warn)}
+#msg{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="Original_on_Transparent.png" alt="BG"
+      onerror="this.style.display='none';document.getElementById('lfb').style.display='block'">
+    <div id="lfb" class="logo-fb">BG <span>SERVICE</span></div>
+    <div class="logo-sub">PAINEL ADMIN</div>
+  </div>
+  <div class="badge">ADMIN</div>
+</header>
+
+<!-- LOGIN ADMIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h2>Acesso Administrativo</h2>
+    <p>Digite a senha de administrador para acessar o painel de controle do BG Service.</p>
+    <div id="msg" class="alert"></div>
+    <label class="fl">Senha Admin</label>
+    <input type="password" id="adminPass" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')loginAdmin()">
+    <button class="br" onclick="loginAdmin()">Entrar no Painel</button>
+    <hr class="sep">
+    <p class="hint">Primeira vez? A senha padrão é <code>bgadmin2024</code>. Troque após o primeiro acesso.</p>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN -->
+<div class="admin-wrap" id="adminWrap">
+
+  <div id="globalMsg" style="display:none;margin-bottom:16px"></div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="val" id="statUsers">0</div><div class="lbl">Técnicos</div></div>
+    <div class="stat"><div class="val" id="statManuais">0</div><div class="lbl">Manuais</div></div>
+    <div class="stat"><div class="val" id="statCasos">0</div><div class="lbl">Casos Aprendidos</div></div>
+  </div>
+
+  <div class="grid2">
+
+    <!-- CONFIGURAÇÕES -->
+    <div class="card">
+      <h3><span class="ico">⚙️</span> Configurações do Sistema</h3>
+
+      <div id="cfgStatus" class="status-bar">
+        <div class="sdot no"></div>
+        <span>Verificando configuração...</span>
+      </div>
+
+      <label class="fl">Chave API Anthropic</label>
+      <p class="hint">Obtenha em <code>console.anthropic.com</code> → API Keys</p>
+      <input type="password" id="cfgApiKey" placeholder="sk-ant-api03-...">
+
+      <label class="fl">GitHub Token (para salvar dados)</label>
+      <p class="hint">Crie em <code>github.com</code> → Settings → Developer settings → Personal access tokens → Tokens (classic) → marque <code>repo</code></p>
+      <input type="password" id="cfgGhToken" placeholder="ghp_...">
+
+      <label class="fl">Nova Senha Admin</label>
+      <input type="password" id="cfgAdminPass" placeholder="Deixe em branco para não alterar">
+
+      <button class="br" onclick="salvarConfig()">💾 Salvar Configurações</button>
+    </div>
+
+    <!-- TÉCNICOS -->
+    <div class="card">
+      <h3><span class="ico">👷</span> Técnicos</h3>
+
+      <label class="fl">Nome do Técnico</label>
+      <input type="text" id="novoNome" placeholder="Ex: João Silva">
+      <label class="fl">Senha</label>
+      <input type="password" id="novaSenha" placeholder="Senha de acesso">
+      <button class="br ok" onclick="addUsuario()" style="margin-bottom:12px">+ Adicionar Técnico</button>
+
+      <hr class="sep">
+      <table class="utbl" id="usersTable">
+        <thead><tr><th>Nome</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody id="usersList"></tbody>
+      </table>
+    </div>
+
+    <!-- MANUAIS -->
+    <div class="card">
+      <h3><span class="ico">📚</span> Manuais (Banco de Dados)</h3>
+      <p class="hint">Os manuais ficam no GitHub e são compartilhados com todos os técnicos automaticamente.</p>
+
+      <div id="uploadStatus" class="status-bar" style="display:none">
+        <div class="sdot no" id="upDot"></div>
+        <span id="upMsg">Fazendo upload...</span>
+      </div>
+
+      <label class="fl">Selecione PDFs para upload</label>
+      <input type="file" id="manualFile" accept=".pdf,.txt,.md" multiple
+        onchange="uploadManuais(this.files)" style="cursor:pointer">
+
+      <div id="manualList" style="margin-top:8px"></div>
+    </div>
+
+    <!-- CASOS APRENDIDOS -->
+    <div class="card">
+      <h3><span class="ico">🧠</span> Casos Aprendidos pela IA</h3>
+      <p class="hint">Diagnósticos confirmados pelos técnicos. A IA consulta esses casos para melhorar respostas futuras.</p>
+      <div id="casosList">
+        <div style="font-size:12px;color:var(--mut);text-align:center;padding:20px 0">Carregando casos...</div>
+      </div>
+      <hr class="sep">
+      <button class="br danger sm" onclick="limparCasos()">🗑 Limpar todos os casos</button>
+    </div>
+
+  </div>
+
+  <hr class="sep" style="margin:24px 0">
+  <div style="text-align:center">
+    <a href="index.html" style="color:var(--mut);font-size:12px;font-family:'DM Mono',monospace">← Ir para o App dos Técnicos</a>
+    &nbsp;&nbsp;
+    <button class="br sm danger" onclick="logoutAdmin()" style="display:inline-block;width:auto">Sair</button>
+  </div>
+</div>
+
+<script>
+const OWNER='MachineBG', REPO='assistente-tecnico-bg2', BRANCH='main';
+const GH_API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+
+// ═══ STORAGE LOCAL (admin) ═══
+const A={
+  pass:()=>localStorage.getItem('bg_adm_pass')||'bgadmin2024',
+  setPass:v=>localStorage.setItem('bg_adm_pass',v),
+  apiKey:()=>localStorage.getItem('bg_k')||'',
+  setApiKey:v=>localStorage.setItem('bg_k',v),
+  ghToken:()=>localStorage.getItem('bg_gh')||'',
+  setGhToken:v=>localStorage.setItem('bg_gh',v),
+  loggedIn:()=>sessionStorage.getItem('bg_adm')==='1',
+  setLogin:()=>sessionStorage.setItem('bg_adm','1'),
+  logout:()=>sessionStorage.removeItem('bg_adm'),
+};
+
+// ═══ LOGIN ═══
+function loginAdmin(){
+  const p=document.getElementById('adminPass').value;
+  if(p===A.pass()){
+    A.setLogin();
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('adminWrap').style.display='block';
+    initAdmin();
+  } else {
+    showMsg('msg','er','Senha incorreta');
+  }
+}
+function logoutAdmin(){A.logout();location.reload();}
+
+// ═══ INIT ═══
+async function initAdmin(){
+  document.getElementById('cfgApiKey').value=A.apiKey();
+  document.getElementById('cfgGhToken').value=A.ghToken();
+  await checkConfig();
+  await loadUsuarios();
+  await loadManuais();
+  await loadCasos();
+}
+
+// ═══ CONFIG ═══
+async function checkConfig(){
+  const bar=document.getElementById('cfgStatus');
+  const dot=bar.querySelector('.sdot');
+  const txt=bar.querySelector('span');
+  if(!A.apiKey()&&!A.ghToken()){
+    dot.className='sdot er';txt.textContent='Configure a API Key e o GitHub Token para começar';return;
+  }
+  if(!A.ghToken()){dot.className='sdot er';txt.textContent='GitHub Token não configurado — dados não podem ser salvos';return;}
+  // Testa token
+  try{
+    const r=await ghGet('dados/usuarios.json');
+    dot.className='sdot ok';txt.textContent='Sistema configurado e conectado ao GitHub';
+  }catch(e){
+    dot.className='sdot er';txt.textContent='GitHub Token inválido ou arquivo dados/usuarios.json não encontrado';
+  }
+}
+
+async function salvarConfig(){
+  const key=document.getElementById('cfgApiKey').value.trim();
+  const tok=document.getElementById('cfgGhToken').value.trim();
+  const pass=document.getElementById('cfgAdminPass').value.trim();
+  if(key)A.setApiKey(key);
+  if(tok)A.setGhToken(tok);
+  if(pass)A.setPass(pass);
+  showGlobal('ok','Configurações salvas!');
+  await checkConfig();
+}
+
+// ═══ GITHUB API ═══
+async function ghGet(path){
+  const r=await fetch(GH_API+path,{headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json'}});
+  if(!r.ok)throw new Error(r.status);
+  const d=await r.json();
+  return{content:JSON.parse(atob(d.content.replace(/\n/g,''))),sha:d.sha};
+}
+
+async function ghPut(path,content,sha,msg){
+  const body={message:msg||'update',content:btoa(unescape(encodeURIComponent(JSON.stringify(content,null,2)))),branch:BRANCH};
+  if(sha)body.sha=sha;
+  const r=await fetch(GH_API+path,{method:'PUT',headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json();throw new Error(e.message);}
+  return r.json();
+}
+
+async function ghPutBinary(path,base64content,sha,msg){
+  const body={message:msg||'upload',content:base64content,branch:BRANCH};
+  if(sha)body.sha=sha;
+  const r=await fetch(GH_API+path,{method:'PUT',headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json();throw new Error(e.message);}
+  return r.json();
+}
+
+async function ghDelete(path,sha,msg){
+  const r=await fetch(GH_API+path,{method:'DELETE',headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:msg||'delete',sha,branch:BRANCH})});
+  if(!r.ok)throw new Error(r.status);
+}
+
+// ═══ USUÁRIOS ═══
+async function loadUsuarios(){
+  try{
+    const{content}=await ghGet('dados/usuarios.json');
+    renderUsuarios(content);
+    document.getElementById('statUsers').textContent=content.length;
+  }catch(e){
+    document.getElementById('usersList').innerHTML='<tr><td colspan="3" style="color:var(--mut);font-size:12px;padding:10px">Arquivo usuarios.json não encontrado no GitHub</td></tr>';
+  }
+}
+
+function renderUsuarios(users){
+  const tbody=document.getElementById('usersList');
+  tbody.innerHTML=users.map((u,i)=>`
+    <tr>
+      <td><strong>${esc(u.nome)}</strong></td>
+      <td><span class="pill ok">Ativo</span></td>
+      <td><button class="rm-btn" onclick="remUsuario(${i})" title="Remover">✕</button></td>
+    </tr>`).join('');
+}
+
+async function addUsuario(){
+  const nome=document.getElementById('novoNome').value.trim();
+  const senha=document.getElementById('novaSenha').value.trim();
+  if(!nome||!senha){showGlobal('er','Preencha nome e senha');return;}
+  try{
+    let users=[],sha=null;
+    try{const d=await ghGet('dados/usuarios.json');users=d.content;sha=d.sha;}catch(e){}
+    if(users.find(u=>u.nome.toLowerCase()===nome.toLowerCase())){showGlobal('er','Técnico já existe');return;}
+    users.push({nome,senha:btoa(senha),ativo:true,criado:new Date().toISOString()});
+    await ghPut('dados/usuarios.json',users,sha,'Adiciona tecnico: '+nome);
+    document.getElementById('novoNome').value='';
+    document.getElementById('novaSenha').value='';
+    showGlobal('ok','Técnico '+nome+' adicionado!');
+    await loadUsuarios();
+  }catch(e){showGlobal('er','Erro: '+e.message);}
+}
+
+async function remUsuario(i){
+  if(!confirm('Remover este técnico?'))return;
+  try{
+    const{content,sha}=await ghGet('dados/usuarios.json');
+    content.splice(i,1);
+    await ghPut('dados/usuarios.json',content,sha,'Remove tecnico');
+    showGlobal('ok','Técnico removido');
+    await loadUsuarios();
+  }catch(e){showGlobal('er','Erro: '+e.message);}
+}
+
+// ═══ MANUAIS ═══
+async function loadManuais(){
+  try{
+    const r=await fetch(GH_API+'dados/manuais/',{headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok)throw new Error();
+    const files=await r.json();
+    const pdfs=files.filter(f=>f.type==='file');
+    document.getElementById('statManuais').textContent=pdfs.length;
+    document.getElementById('manualList').innerHTML=pdfs.map(f=>`
+      <div class="manual-item">
+        <span>📄</span>
+        <div class="mn"><b>${esc(f.name)}</b><small>${(f.size/1024).toFixed(0)} KB</small></div>
+        <button class="rm-btn" onclick="remManual('${f.name}','${f.sha}')">✕</button>
+      </div>`).join('');
+  }catch(e){
+    document.getElementById('manualList').innerHTML='<div style="font-size:11px;color:var(--mut)">Pasta dados/manuais não encontrada</div>';
+  }
+}
+
+async function uploadManuais(files){
+  if(!A.ghToken()){showGlobal('er','Configure o GitHub Token primeiro');return;}
+  const bar=document.getElementById('uploadStatus');
+  const dot=document.getElementById('upDot');
+  const msg=document.getElementById('upMsg');
+  bar.style.display='flex';
+
+  for(const f of files){
+    dot.className='sdot no';msg.textContent='Enviando '+f.name+'...';
+    try{
+      const b64=await fileToBase64(f);
+      // Verifica se já existe para pegar SHA
+      let sha=null;
+      try{
+        const r=await fetch(GH_API+'dados/manuais/'+encodeURIComponent(f.name),{headers:{'Authorization':'token '+A.ghToken()}});
+        if(r.ok){const d=await r.json();sha=d.sha;}
+      }catch(e){}
+      await ghPutBinary('dados/manuais/'+f.name,b64,sha,'Upload manual: '+f.name);
+      dot.className='sdot ok';msg.textContent=f.name+' enviado!';
+    }catch(e){
+      dot.className='sdot er';msg.textContent='Erro em '+f.name+': '+e.message;
+    }
+  }
+  await loadManuais();
+  setTimeout(()=>bar.style.display='none',2000);
+  document.getElementById('manualFile').value='';
+}
+
+async function remManual(name,sha){
+  if(!confirm('Remover manual "'+name+'"?'))return;
+  try{
+    await ghDelete('dados/manuais/'+name,sha,'Remove manual: '+name);
+    showGlobal('ok','Manual removido');
+    await loadManuais();
+  }catch(e){showGlobal('er','Erro: '+e.message);}
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.readAsDataURL(file);
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+  });
+}
+
+// ═══ CASOS ═══
+async function loadCasos(){
+  try{
+    const{content}=await ghGet('dados/casos.json');
+    document.getElementById('statCasos').textContent=content.length;
+    if(!content.length){
+      document.getElementById('casosList').innerHTML='<div style="font-size:12px;color:var(--mut);text-align:center;padding:20px 0">Nenhum caso aprendido ainda</div>';
+      return;
+    }
+    document.getElementById('casosList').innerHTML=content.slice(0,10).map(c=>`
+      <div class="caso-item">
+        <div class="ci-head">
+          <span class="ci-equip">${esc(c.fabricante)} ${esc(c.modelo)}</span>
+          <span class="ci-date">${new Date(c.data).toLocaleDateString('pt-BR')}</span>
+        </div>
+        <div class="ci-falha">Código: <strong>${esc(c.codigo)}</strong> → ${esc(c.diagnosticoReal)}</div>
+        <div class="ci-tec">Técnico: ${esc(c.tecnico)}</div>
+      </div>`).join('');
+    if(content.length>10)document.getElementById('casosList').innerHTML+=`<div style="font-size:11px;color:var(--mut);text-align:center;padding:8px">+${content.length-10} casos anteriores</div>`;
+  }catch(e){
+    document.getElementById('casosList').innerHTML='<div style="font-size:12px;color:var(--mut);text-align:center;padding:20px 0">Arquivo casos.json não encontrado ainda</div>';
+  }
+}
+
+async function limparCasos(){
+  if(!confirm('Apagar todos os casos aprendidos?'))return;
+  try{
+    let sha=null;
+    try{const d=await ghGet('dados/casos.json');sha=d.sha;}catch(e){}
+    await ghPut('dados/casos.json',[],sha,'Limpa casos');
+    showGlobal('ok','Casos apagados');
+    await loadCasos();
+  }catch(e){showGlobal('er','Erro: '+e.message);}
+}
+
+// ═══ HELPERS ═══
+function showMsg(id,type,txt){
+  const el=document.getElementById(id);
+  el.style.display='block';el.className='alert '+type;el.textContent=txt;
+  setTimeout(()=>el.style.display='none',3000);
+}
+function showGlobal(type,txt){
+  const el=document.getElementById('globalMsg');
+  el.style.display='block';el.className='alert '+type;el.textContent=txt;
+  setTimeout(()=>el.style.display='none',3000);
+}
+function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══ INIT ═══
+window.addEventListener('DOMContentLoaded',()=>{
+  if(A.loggedIn()){
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('adminWrap').style.display='block';
+    initAdmin();
+  }
+});
+</script>
+</body>
+</html>

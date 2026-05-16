@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BG Service — Assistente Técnico</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BG Service">
+<meta name="theme-color" content="#cc0000">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{--bg:#111;--sur:#1a1a1a;--su2:#222;--bdr:#2e2e2e;--red:#cc0000;--rd2:#e62020;--rdm:rgba(204,0,0,0.10);--txt:#f0f0f0;--mut:#666;--ok:#2ecc71;--er:#e74c3c}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* LOGIN */
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--sur);border:1px solid var(--bdr);border-top:3px solid var(--red);border-radius:14px;padding:28px;max-width:380px;width:100%}
+.login-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.login-box p{font-size:13px;color:var(--mut);margin-bottom:20px;line-height:1.5}
+.lmsg{font-size:12px;color:var(--er);margin-bottom:10px;display:none}
+
+/* HEADER */
+header{background:#0a0a0a;border-bottom:2px solid var(--red);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;flex-shrink:0;display:none}
+header.show{display:flex}
+.logo-w{display:flex;align-items:center;gap:8px}
+.logo-i{height:28px;object-fit:contain}
+.logo-f{font-size:18px;font-weight:800;color:#fff;display:none}.logo-f span{color:var(--red)}
+.logo-s{font-family:'DM Mono',monospace;font-size:9px;color:var(--mut);letter-spacing:1px}
+.h-r{display:flex;align-items:center;gap:8px}
+.tec-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--mut);background:var(--su2);border:1px solid var(--bdr);padding:3px 9px;border-radius:20px}
+.btn-sm{background:var(--red);color:#fff;border:none;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* LAYOUT */
+.app{display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column}
+.app.show{display:flex}
+
+/* MOBILE NAV */
+.mob-nav{display:flex;border-bottom:1px solid var(--bdr);background:var(--sur);flex-shrink:0}
+.nav-btn{flex:1;padding:10px 0;font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s}
+.nav-btn .nb-ico{font-size:16px}
+.nav-btn.on{color:var(--red);border-bottom-color:var(--red)}
+
+/* PANELS */
+.panels{flex:1;min-height:0;position:relative;overflow:hidden}
+.panel{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.panel.on{display:flex}
+
+/* CHAT PANEL */
+.chat{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
+.emp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:12px}
+.emp .ei{width:60px;height:60px;background:var(--rdm);border:1px solid rgba(204,0,0,.3);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.emp h2{font-size:20px;font-weight:700}
+.emp p{color:var(--mut);font-size:13px;max-width:300px;line-height:1.6}
+.cps{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
+.cp{background:var(--su2);border:1px solid var(--bdr);border-radius:20px;padding:7px 13px;font-size:12px;cursor:pointer;transition:all .15s;color:var(--txt);touch-action:manipulation}
+.cp:active{border-color:var(--red);color:var(--red)}
+
+/* MESSAGES */
+.msg{display:flex;gap:8px;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.msg.u .av{background:#1d1d1d;border:1px solid var(--bdr)}
+.msg.a .av{background:var(--red)}
+.bub{max-width:82%;padding:10px 12px;border-radius:10px;font-size:13.5px;line-height:1.7;word-break:break-word}
+.msg.u .bub{background:var(--su2);border:1px solid var(--bdr);border-top-right-radius:2px}
+.msg.a .bub{background:var(--sur);border:1px solid var(--bdr);border-top-left-radius:2px}
+.bub .sh{display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin:10px 0 3px}
+.bub .sh:first-child{margin-top:0}
+.cur{display:inline-block;width:2px;height:14px;background:var(--red);margin-left:2px;vertical-align:middle;animation:bl .7s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.dts{display:flex;gap:5px;padding:4px 0}
+.dts span{width:6px;height:6px;background:var(--mut);border-radius:50%;animation:dt 1.2s infinite}
+.dts span:nth-child(2){animation-delay:.2s}.dts span:nth-child(3){animation-delay:.4s}
+@keyframes dt{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* FEEDBACK BOX */
+.fb-box{background:var(--su2);border:1px solid var(--bdr);border-left:3px solid var(--ok);border-radius:8px;padding:12px;margin-top:4px}
+.fb-box .fb-title{font-size:11px;font-family:'DM Mono',monospace;color:var(--ok);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.fb-box textarea{width:100%;background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:8px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:12px;resize:none;outline:none;min-height:55px;line-height:1.5}
+.fb-box textarea:focus{border-color:var(--ok)}
+.fb-box textarea::placeholder{color:var(--mut)}
+.fb-row{display:flex;gap:7px;margin-top:7px}
+.fb-btn{flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.fb-ok{background:var(--ok);color:#fff}
+.fb-skip{background:var(--su2);color:var(--mut);border:1px solid var(--bdr)}
+
+/* FORM TRIAGEM */
+.tf{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--red);border-radius:10px;padding:14px;animation:fu .2s ease}
+.tf .tl{font-family:'DM Mono',monospace;font-size:10px;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.tf input,.tf select,.tf textarea{width:100%;background:var(--su2);border:1px solid var(--bdr);border-radius:7px;padding:9px 11px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:8px;-webkit-appearance:none}
+.tf input:focus,.tf select:focus,.tf textarea:focus{border-color:var(--red)}
+.tf input::placeholder,.tf textarea::placeholder{color:var(--mut)}
+.tf textarea{resize:none;line-height:1.5;min-height:60px}
+.tf .fl{font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;display:block}
+.ta{display:flex;gap:7px;margin-top:4px}
+.br{background:var(--red);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;flex:1;touch-action:manipulation}
+.br:active{background:var(--rd2)}
+.bg2{background:none;border:1px solid var(--bdr);color:var(--mut);border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;touch-action:manipulation}
+
+/* INPUT BAR */
+.ibar{padding:8px 12px 12px;border-top:1px solid var(--bdr);background:var(--sur);flex-shrink:0;padding-bottom:max(12px, env(safe-area-inset-bottom))}
+.stl{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mut);margin-bottom:6px;font-family:'DM Mono',monospace}
+.sd{width:5px;height:5px;border-radius:50%;background:var(--ok);animation:sb 2s infinite}
+@keyframes sb{0%,100%{opacity:1}50%{opacity:.3}}
+.sc{color:var(--red)}
+.iw{display:flex;gap:7px;align-items:flex-end;background:var(--su2);border:1.5px solid var(--bdr);border-radius:11px;padding:8px 10px;transition:border-color .2s}
+.iw:focus-within{border-color:var(--red)}
+textarea#inp{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;resize:none;line-height:1.5;max-height:90px;min-height:20px}
+textarea#inp::placeholder{color:var(--mut)}
+.sbt{width:34px;height:34px;background:var(--red);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;touch-action:manipulation}
+.sbt:active{background:var(--rd2)}
+.sbt:disabled{opacity:.4}
+
+/* MANUAIS PANEL */
+.man-panel{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.man-loading{text-align:center;padding:40px 20px;color:var(--mut);font-size:13px}
+.man-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--su2);border:1px solid var(--bdr);border-left:3px solid var(--red);border-radius:8px;margin-bottom:8px}
+.man-item .mi{flex:1;min-width:0}
+.man-item .mi b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.man-item .mi small{color:var(--mut);font-size:10px}
+.man-status{font-size:10px;padding:2px 7px;border-radius:20px;font-family:'DM Mono',monospace;flex-shrink:0}
+.man-status.ok{background:rgba(46,204,113,.15);color:var(--ok);border:1px solid rgba(46,204,113,.3)}
+.man-status.no{background:var(--su2);color:var(--mut);border:1px solid var(--bdr)}
+
+/* HIST PANEL */
+.hist-panel{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.hs{border:1px solid var(--bdr);border-radius:8px;overflow:hidden;cursor:pointer;margin-bottom:8px;transition:border-color .15s;touch-action:manipulation}
+.hs:active{border-color:var(--red)}
+.hh{display:flex;align-items:center;padding:9px 11px;background:var(--su2);gap:6px}
+.hh .ht{flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hh .hd{font-size:10px;color:var(--mut);flex-shrink:0}
+.hp{font-size:11px;color:var(--mut);padding:6px 11px 9px;line-height:1.4}
+.hem{text-align:center;color:var(--mut);font-size:12px;padding:40px 0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:10px}
+
+/* FORMS */
+input,select{-webkit-appearance:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <img src="Original_on_Transparent.png" style="height:32px;object-fit:contain" alt="BG"
+        onerror="this.style.display='none';document.getElementById('llfb').style.display='block'">
+      <div id="llfb" style="display:none;font-size:20px;font-weight:800;color:#fff">BG <span style="color:var(--red)">SERVICE</span></div>
+    </div>
+    <h2>Acesso Técnico</h2>
+    <p>Entre com seu usuário para acessar o assistente de diagnóstico.</p>
+    <div class="lmsg" id="lmsg"></div>
+    <label style="font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;display:block">Seu Nome</label>
+    <select id="loginNome" style="width:100%;background:var(--su2);border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px">
+      <option value="">Selecione seu nome...</option>
+    </select>
+    <label style="font-size:10px;font-family:'DM Mono',monospace;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;display:block">Senha</label>
+    <input type="password" id="loginSenha" placeholder="Sua senha" style="width:100%;background:var(--su2);border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px"
+      onkeydown="if(event.key==='Enter')fazerLogin()">
+    <button class="br" onclick="fazerLogin()" style="width:100%">Entrar</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="hdr">
+  <div class="logo-w">
+    <img src="Original_on_Transparent.png" class="logo-i" alt="BG"
+      onerror="this.style.display='none';document.getElementById('lfb').style.display='block'">
+    <div id="lfb" class="logo-f">BG <span>SERVICE</span></div>
+  </div>
+  <div class="h-r">
+    <div class="tec-badge" id="tecBadge">...</div>
+    <button class="btn-sm" onclick="sair()">Sair</button>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app" id="app">
+
+  <!-- NAV -->
+  <div class="mob-nav">
+    <button class="nav-btn on" onclick="swPanel('chat',this)" id="nb-chat">
+      <span class="nb-ico">🔧</span>Diagnóstico
+    </button>
+    <button class="nav-btn" onclick="swPanel('manuais',this)" id="nb-manuais">
+      <span class="nb-ico">📚</span>Manuais
+    </button>
+    <button class="nav-btn" onclick="swPanel('hist',this)" id="nb-hist">
+      <span class="nb-ico">🕐</span>Histórico
+    </button>
+  </div>
+
+  <div class="panels">
+
+    <!-- CHAT -->
+    <div class="panel on" id="panel-chat">
+      <div class="chat" id="chat">
+        <div class="emp" id="es">
+          <div class="ei">⚙️</div>
+          <h2>Olá, <span id="nomeHero">Técnico</span>!</h2>
+          <p>Selecione o sintoma ou descreva a falha. A IA consulta o manual correto automaticamente.</p>
+          <div class="cps">
+            <div class="cp" onclick="abrirForm('Plataforma não sobe')">Plataforma não sobe</div>
+            <div class="cp" onclick="abrirForm('Motor não liga')">Motor não liga</div>
+            <div class="cp" onclick="abrirForm('Erro de sobrecarga')">Erro de sobrecarga</div>
+            <div class="cp" onclick="abrirForm('Falha hidráulica')">Falha hidráulica</div>
+            <div class="cp" onclick="abrirForm('Alarme contínuo')">Alarme contínuo</div>
+            <div class="cp" onclick="abrirForm('Bateria não carrega')">Bateria não carrega</div>
+            <div class="cp" onclick="abrirForm('Controle sem resposta')">Controle sem resposta</div>
+            <div class="cp" onclick="abrirForm('')">Outro sintoma...</div>
+          </div>
+        </div>
+      </div>
+      <div class="ibar">
+        <div class="stl">
+          <div class="sd"></div>
+          <span>IA online · <span class="sc" id="sc">carregando...</span></span>
+        </div>
+        <div class="iw">
+          <textarea id="inp" placeholder="Descreva a falha..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+          <button class="sbt" id="sbt" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANUAIS -->
+    <div class="panel" id="panel-manuais">
+      <div class="man-panel" id="manList">
+        <div class="man-loading">Carregando manuais do servidor...</div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="panel" id="panel-hist">
+      <div class="hist-panel" id="histList">
+        <div class="hem">Nenhuma conversa ainda</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ═══ CONFIG ═══
+const OWNER='MachineBG', REPO='assistente-tecnico-bg2', BRANCH='main';
+const GH_RAW=`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/`;
+const GH_API=`https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+const API_URL='https://api.anthropic.com/v1/messages';
+const MODEL='claude-haiku-4-5-20251001';
+
+// ═══ ESTADO ═══
+let tecnico=null;      // {nome, ...}
+let manuaisDB=[];      // manuais carregados do GitHub
+let casosDB=[];        // casos aprendidos
+let msgs=[];           // conversa atual
+let loading=false;
+let sessId=null;
+let triagem=null;
+
+// ═══ STORAGE ═══
+const S={
+  key:()=>localStorage.getItem('bg_k')||'',
+  ghToken:()=>localStorage.getItem('bg_gh')||'',
+  tec:()=>JSON.parse(sessionStorage.getItem('bg_tec')||'null'),
+  setTec:v=>sessionStorage.setItem('bg_tec',JSON.stringify(v)),
+  hist:(nome)=>JSON.parse(localStorage.getItem('bg_h_'+nome)||'[]'),
+  setHist:(nome,v)=>localStorage.setItem('bg_h_'+nome,JSON.stringify(v)),
+};
+
+// ═══ NAV ═══
+function swPanel(name,btn){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('panel-'+name).classList.add('on');
+}
+
+// ═══ LOGIN ═══
+async function carregarUsuarios(){
+  try{
+    const r=await fetch(GH_RAW+'dados/usuarios.json?t='+Date.now());
+    const users=await r.json();
+    const sel=document.getElementById('loginNome');
+    users.forEach(u=>{
+      const o=document.createElement('option');
+      o.value=u.nome;o.textContent=u.nome;
+      sel.appendChild(o);
+    });
+  }catch(e){
+    // Se não carregar, permite qualquer nome
+    const sel=document.getElementById('loginNome');
+    sel.innerHTML='<option value="">Digite seu nome abaixo</option>';
+    sel.insertAdjacentHTML('afterend','<input id="loginNomeText" placeholder="Seu nome" style="width:100%;background:var(--su2);border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;color:var(--txt);font-family:\'DM Sans\',sans-serif;font-size:14px;outline:none;margin-bottom:10px">');
+    sel.style.display='none';
+  }
+}
+
+async function fazerLogin(){
+  const nomeEl=document.getElementById('loginNome');
+  const nome=(nomeEl.value||document.getElementById('loginNomeText')?.value||'').trim();
+  const senha=document.getElementById('loginSenha').value.trim();
+  if(!nome||!senha){showLmsg('Preencha nome e senha');return;}
+
+  try{
+    const r=await fetch(GH_RAW+'dados/usuarios.json?t='+Date.now());
+    const users=await r.json();
+    const user=users.find(u=>u.nome===nome&&atob(u.senha)===senha);
+    if(!user){showLmsg('Nome ou senha incorretos');return;}
+    entrar({nome:user.nome});
+  }catch(e){
+    // Modo offline — aceita qualquer login
+    entrar({nome});
+  }
+}
+
+function entrar(user){
+  tecnico=user;
+  S.setTec(user);
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('hdr').classList.add('show');
+  document.getElementById('app').classList.add('show');
+  document.getElementById('tecBadge').textContent=user.nome;
+  document.getElementById('nomeHero').textContent=user.nome.split(' ')[0];
+  initApp();
+}
+
+function sair(){
+  sessionStorage.removeItem('bg_tec');
+  location.reload();
+}
+
+function showLmsg(t){
+  const el=document.getElementById('lmsg');
+  el.textContent=t;el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
+}
+
+// ═══ INIT APP ═══
+async function initApp(){
+  await Promise.all([carregarManuais(), carregarCasos()]);
+  renderHist();
+}
+
+// ═══ MANUAIS DO GITHUB ═══
+async function carregarManuais(){
+  try{
+    const r=await fetch(GH_API+'dados/manuais/',{headers:{
+      'Accept':'application/vnd.github.v3+json',
+      ...(S.ghToken()?{'Authorization':'token '+S.ghToken()}:{})
+    }});
+    const files=await r.json();
+    document.getElementById('sc').textContent=files.length+' manuais';
+    renderManList(files);
+
+    // Carrega conteúdo dos PDFs em background
+    for(const f of files){
+      if(f.name.endsWith('.pdf')||f.name.endsWith('.txt')||f.name.endsWith('.md')){
+        carregarManual(f);
+      }
+    }
+  }catch(e){
+    document.getElementById('sc').textContent='offline';
+    document.getElementById('manList').innerHTML='<div class="man-loading">Erro ao carregar manuais. Verifique conexão.</div>';
+  }
+}
+
+function renderManList(files){
+  const list=document.getElementById('manList');
+  if(!files.length){list.innerHTML='<div class="man-loading">Nenhum manual cadastrado ainda.<br>Acesse o painel admin para adicionar.</div>';return;}
+  list.innerHTML=files.map(f=>`
+    <div class="man-item" id="mi-${esc(f.name.replace(/\./g,'_'))}">
+      <span style="font-size:16px">📄</span>
+      <div class="mi"><b>${esc(f.name)}</b><small>${(f.size/1024).toFixed(0)} KB</small></div>
+      <span class="man-status no" id="ms-${esc(f.name.replace(/\./g,'_'))}">...</span>
+    </div>`).join('');
+}
+
+async function carregarManual(fileInfo){
+  const key=fileInfo.name.replace(/\./g,'_');
+  try{
+    // Baixa o arquivo diretamente do GitHub
+    const r=await fetch(fileInfo.download_url);
+    const blob=await r.blob();
+    const file=new File([blob],fileInfo.name,{type:blob.type});
+
+    let content='';
+    if(fileInfo.name.endsWith('.pdf')){
+      content=await extractPDF(file,null);
+    }else{
+      content=await file.text();
+    }
+
+    manuaisDB.push({name:fileInfo.name,content,size:fileInfo.size});
+    buildIndex(manuaisDB[manuaisDB.length-1]);
+
+    // Atualiza status na lista
+    const st=document.getElementById('ms-'+key);
+    if(st){st.className='man-status ok';st.textContent='ok';}
+    document.getElementById('sc').textContent=manuaisDB.length+' manuais';
+
+  }catch(e){
+    const st=document.getElementById('ms-'+key);
+    if(st){st.className='man-status';st.textContent='erro';st.style.color='var(--er)';}
+  }
+}
+
+// ═══ CASOS DO GITHUB ═══
+async function carregarCasos(){
+  try{
+    const r=await fetch(GH_RAW+'dados/casos.json?t='+Date.now());
+    casosDB=await r.json();
+  }catch(e){casosDB=[];}
+}
+
+async function salvarCaso(caso){
+  if(!S.ghToken())return;
+  try{
+    casosDB.push(caso);
+    let sha=null;
+    try{
+      const r=await fetch(GH_API+'dados/casos.json',{headers:{'Authorization':'token '+S.ghToken(),'Accept':'application/vnd.github.v3+json'}});
+      const d=await r.json();sha=d.sha;
+    }catch(e){}
+    await fetch(GH_API+'dados/casos.json',{method:'PUT',
+      headers:{'Authorization':'token '+S.ghToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      body:JSON.stringify({message:'Caso confirmado por '+tecnico.nome,content:btoa(unescape(encodeURIComponent(JSON.stringify(casosDB,null,2)))),branch:BRANCH,...(sha?{sha}:{})})
+    });
+  }catch(e){console.log('Erro ao salvar caso:',e);}
+}
+
+// ═══ PDF.JS ═══
+function cleanText(t){
+  t=t.replace(/([A-Za-zÀ-ú])\1+/g,'$1');
+  t=t.replace(/\b([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú])\b/g,'$1$2$3$4');
+  t=t.replace(/\b([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú])\b/g,'$1$2$3');
+  t=t.replace(/  +/g,' ');
+  return t.toLowerCase();
+}
+
+async function extractPDF(file,onP){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();r.readAsArrayBuffer(file);
+    r.onload=async()=>{
+      try{
+        const pdf=await pdfjsLib.getDocument({data:new Uint8Array(r.result)}).promise;
+        const tot=pdf.numPages;
+        let txt='[PDF: '+file.name+' - '+tot+' paginas]\n\n';
+        for(let i=1;i<=tot;i++){
+          const pg=await pdf.getPage(i);
+          const tc=await pg.getTextContent();
+          let pt='',ly=null;
+          for(const it of tc.items){
+            if(ly!==null&&Math.abs(it.transform[5]-ly)>5)pt+='\n';
+            pt+=it.str+' ';ly=it.transform[5];
+          }
+          let clean=pt.trim();
+          clean=clean.replace(/([A-Za-zÀ-ú])\1+/g,'$1');
+          clean=clean.replace(/\b([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú]) ([A-Za-zÀ-ú])\b/g,'$1$2$3$4');
+          clean=clean.replace(/  +/g,' ');
+          txt+='--- Pagina '+i+' ---\n'+clean+'\n\n';
+          onP&&onP(Math.round(i/tot*100));
+          if(txt.length>80000){txt+='\n[Truncado em '+i+' paginas]';break;}
+        }
+        res(txt);
+      }catch(e){rej(e);}
+    };r.onerror=rej;
+  });
+}
+
+// ═══ ÍNDICE E SELEÇÃO ═══
+function buildIndex(m){
+  if(m.index)return;
+  const preview=cleanText(m.content.slice(0,5000));
+  const fabs=['haulotte','jlg','skyjack','genie','manitou','compact','terex','niftylift','toucan','upright','snorkel','star','optimum','ha16','ha18','ha20','ha12','ha14'];
+  const found=fabs.filter(f=>preview.includes(f));
+  const rawM=m.content.slice(0,3000).match(/\b[A-Z][A-Z0-9]{1,3}[\s\-]?[0-9]{1,4}[A-Z]{0,3}\b/g)||[];
+  m.index={fabricantes:found,modelos:[...new Set(rawM)].map(x=>x.toLowerCase()).slice(0,20),preview:preview.slice(0,500)};
+}
+
+function selectM(fab,mod){
+  if(!manuaisDB.length)return null;
+  manuaisDB.forEach(m=>buildIndex(m));
+  const fabL=fab.toLowerCase().trim();
+  const modL=mod.toLowerCase().trim();
+  const modW=modL.split(/[\s\-\/]+/).filter(w=>w.length>1);
+  const scored=manuaisDB.map(m=>{
+    let pts=0;
+    const idx=m.index||{fabricantes:[],modelos:[],preview:''};
+    const nameL=m.name.toLowerCase();
+    const cont=cleanText(m.content.slice(0,8000));
+    if(idx.fabricantes.includes(fabL))pts+=10;
+    if(nameL.includes(fabL))pts+=5;
+    if(cont.includes(fabL))pts+=3;
+    if(idx.modelos.some(x=>x.includes(modL)||modL.includes(x)))pts+=10;
+    if(nameL.includes(modL))pts+=5;
+    if(cont.includes(modL))pts+=4;
+    modW.forEach(w=>{
+      if(idx.modelos.some(x=>x.includes(w)))pts+=3;
+      if(nameL.includes(w))pts+=2;
+      if(cont.includes(w))pts+=1;
+    });
+    return{m,pts};
+  });
+  scored.sort((a,b)=>b.pts-a.pts);
+  console.log('Manuais pontuados:',scored.slice(0,3).map(x=>x.m.name+':'+x.pts));
+  if(scored[0].pts===0)return null;
+  return scored.filter(x=>x.pts>=scored[0].pts*0.6).slice(0,2).map(x=>x.m);
+}
+
+// ═══ HISTÓRICO ═══
+function saveSess(){
+  if(!msgs.length||!tecnico)return;
+  const all=S.hist(tecnico.nome);
+  const id=sessId||Date.now().toString();sessId=id;
+  const first=msgs.find(m=>m.role==='user')?.content||'Consulta';
+  const last=msgs[msgs.length-1]?.content||'';
+  const idx=all.findIndex(s=>s.id===id);
+  const obj={id,title:first.slice(0,55),date:Date.now(),messages:msgs.slice(),preview:last.slice(0,80)};
+  if(idx>=0)all[idx]=obj;else all.unshift(obj);
+  if(all.length>20)all.length=20;
+  S.setHist(tecnico.nome,all);renderHist();
+}
+
+function renderHist(){
+  if(!tecnico)return;
+  const list=document.getElementById('histList');
+  const all=S.hist(tecnico.nome);
+  if(!all.length){list.innerHTML='<div class="hem">Nenhuma consulta ainda</div>';return;}
+  list.innerHTML=all.map(s=>`
+    <div class="hs" onclick="loadSess('${s.id}')">
+      <div class="hh"><span class="ht">${esc(s.title)}</span><span class="hd">${new Date(s.date).toLocaleDateString('pt-BR')}</span></div>
+      <div class="hp">${esc((s.preview||'').slice(0,80))}${(s.preview||'').length>80?'…':''}</div>
+    </div>`).join('');
+}
+
+function loadSess(id){
+  const s=S.hist(tecnico.nome).find(x=>x.id===id);if(!s)return;
+  sessId=id;msgs=s.messages.slice();triagem=null;
+  const c=document.getElementById('chat');c.innerHTML='';
+  msgs.forEach(m=>putB(m.role,m.content));
+  swPanel('chat',document.getElementById('nb-chat'));
+}
+
+function newChat(){
+  msgs=[];sessId=null;triagem=null;
+  document.getElementById('inp').placeholder='Descreva a falha...';
+  document.getElementById('chat').innerHTML=`
+    <div class="emp" id="es">
+      <div class="ei">⚙️</div>
+      <h2>Olá, <span>${tecnico?.nome.split(' ')[0]||'Técnico'}</span>!</h2>
+      <p>Selecione o sintoma ou descreva a falha. A IA consulta o manual correto automaticamente.</p>
+      <div class="cps">
+        <div class="cp" onclick="abrirForm('Plataforma não sobe')">Plataforma não sobe</div>
+        <div class="cp" onclick="abrirForm('Motor não liga')">Motor não liga</div>
+        <div class="cp" onclick="abrirForm('Erro de sobrecarga')">Erro de sobrecarga</div>
+        <div class="cp" onclick="abrirForm('Falha hidráulica')">Falha hidráulica</div>
+        <div class="cp" onclick="abrirForm('Alarme contínuo')">Alarme contínuo</div>
+        <div class="cp" onclick="abrirForm('Bateria não carrega')">Bateria não carrega</div>
+        <div class="cp" onclick="abrirForm('Controle sem resposta')">Controle sem resposta</div>
+        <div class="cp" onclick="abrirForm('')">Outro sintoma...</div>
+      </div>
+    </div>`;
+}
+
+// ═══ TRIAGEM ═══
+function abrirForm(falha=''){
+  document.getElementById('es')?.remove();
+  const id='f'+Date.now();
+  const d=document.createElement('div');d.id=id;d.className='tf';
+  d.innerHTML=`
+    <div class="tl">🔧 Nova Consulta Técnica</div>
+    <label class="fl">Fabricante</label>
+    <input id="${id}-f" list="${id}-fl" placeholder="JLG, Haulotte, Skyjack...">
+    <datalist id="${id}-fl"><option value="JLG"><option value="Haulotte"><option value="Skyjack"><option value="Genie"><option value="Manitou"><option value="Compact"></datalist>
+    <label class="fl">Modelo</label>
+    <input id="${id}-m" placeholder="450AJ, Compact 12, SJ3219...">
+    <label class="fl">Nº de Série <span style="font-size:9px;color:var(--mut)">(opcional)</span></label>
+    <input id="${id}-s" placeholder="Ex: 12345-ABC">
+    <label class="fl">Descrição da Falha / Código de Erro</label>
+    <textarea id="${id}-fa" rows="2" placeholder="Ex: AL06, plataforma não sobe, motor faz barulho...">${esc(falha)}</textarea>
+    <div class="ta">
+      <button class="br" onclick="submitForm('${id}')">🔍 Diagnosticar</button>
+      <button class="bg2" onclick="document.getElementById('${id}').remove()">✕</button>
+    </div>`;
+  document.getElementById('chat').appendChild(d);
+  scroll();
+  setTimeout(()=>document.getElementById(id+'-f').focus(),100);
+}
+
+async function submitForm(id){
+  const fab=document.getElementById(id+'-f').value.trim();
+  const mod=document.getElementById(id+'-m').value.trim();
+  const ser=document.getElementById(id+'-s').value.trim();
+  const fal=document.getElementById(id+'-fa').value.trim();
+  if(!fab||!mod||!fal){alert('Preencha Fabricante, Modelo e a Falha.');return;}
+  triagem={fab,mod,ser,fal};
+  document.getElementById(id).remove();
+  const res='🏗️ '+fab+' '+mod+(ser?' · S/N: '+ser:'')+'\n❗ '+fal;
+  putB('u',res);
+  msgs.push({role:'user',content:'Equipamento: '+fab+' '+mod+(ser?' (S/N: '+ser+')':'')+'. Falha: '+fal});
+  await callIA(selectM(fab,mod));
+}
+
+async function sendMsg(){
+  if(!triagem){abrirForm();return;}
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();if(!txt||loading)return;
+  putB('u',txt);msgs.push({role:'user',content:txt});
+  inp.value='';inp.style.height='auto';
+  await callIA(selectM(triagem.fab,triagem.mod));
+}
+
+// ═══ IA COM STREAMING ═══
+async function callIA(mans){
+  loading=true;document.getElementById('sbt').disabled=true;
+  const{bubble}=mkB();
+  const info=mans?.length?'📖 '+mans.map(m=>m.name).join(', '):'⚠️ Manual não localizado — usando conhecimento geral';
+  bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>';
+
+  try{
+    const resp=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':S.key(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:MODEL,max_tokens:1500,stream:true,system:buildSys(mans),messages:msgs})
+    });
+
+    let full='';
+    const reader=resp.body.getReader(),dec=new TextDecoder();
+    const cur=document.createElement('span');cur.className='cur';bubble.appendChild(cur);
+
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      const lines=dec.decode(value,{stream:true}).split('\n').filter(l=>l.startsWith('data: '));
+      for(const line of lines){
+        const d=line.slice(6);if(d==='[DONE]')continue;
+        try{
+          const delta=JSON.parse(d).delta?.text||'';
+          if(delta){full+=delta;cur.remove();bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>'+fmt(full);bubble.appendChild(cur);scroll();}
+        }catch{}
+      }
+    }
+    cur.remove();
+    bubble.innerHTML='<span style="font-size:10px;color:var(--mut);font-family:\'DM Mono\',monospace">'+esc(info)+'</span><br><br>'+fmt(full);
+    msgs.push({role:'assistant',content:full});
+    saveSess();
+
+    // Campo de feedback
+    mostrarFeedback(mans);
+
+  }catch(e){
+    bubble.innerHTML='⚠️ Erro de conexão. Verifique a conexão e tente novamente.';
+  }
+  loading=false;document.getElementById('sbt').disabled=false;scroll();
+}
+
+function mostrarFeedback(mans){
+  const fbId='fb'+Date.now();
+  const d=document.createElement('div');d.className='fb-box';d.id=fbId;
+  d.innerHTML=`
+    <div class="fb-title">✅ Qual foi a falha real?</div>
+    <p style="font-size:11px;color:var(--mut);margin-bottom:8px;line-height:1.5">Confirme o diagnóstico para a IA aprender. Isso melhora as respostas futuras.</p>
+    <textarea id="${fbId}-txt" rows="2" placeholder="Ex: AL06 = falha de comunicação no módulo principal. Solução: reconectar cabo X..."></textarea>
+    <div class="fb-row">
+      <button class="fb-btn fb-ok" onclick="confirmarFeedback('${fbId}',true)">✓ Confirmar e Salvar</button>
+      <button class="fb-btn fb-skip" onclick="document.getElementById('${fbId}').remove()">Pular</button>
+    </div>`;
+  document.getElementById('chat').appendChild(d);scroll();
+}
+
+async function confirmarFeedback(fbId,salvar){
+  const txt=document.getElementById(fbId+'-txt')?.value.trim();
+  document.getElementById(fbId)?.remove();
+  if(!salvar||!txt)return;
+  // Salva caso no GitHub
+  const caso={
+    fabricante:triagem?.fab||'',
+    modelo:triagem?.mod||'',
+    serie:triagem?.ser||'',
+    codigo:triagem?.fal||'',
+    diagnosticoReal:txt,
+    tecnico:tecnico?.nome||'',
+    data:new Date().toISOString(),
+  };
+  await salvarCaso(caso);
+  // Mensagem de confirmação
+  const ok=document.createElement('div');
+  ok.style.cssText='font-size:11px;color:var(--ok);text-align:center;padding:8px;font-family:\'DM Mono\',monospace';
+  ok.textContent='✓ Caso salvo! A IA vai aprender com isso.';
+  document.getElementById('chat').appendChild(ok);scroll();
+}
+
+// ═══ SYSTEM PROMPT ═══
+function buildSys(mans){
+  // Contexto de casos aprendidos
+  let casosCtx='';
+  if(casosDB.length){
+    const relevantes=casosDB.filter(c=>{
+      if(!triagem)return false;
+      return c.fabricante.toLowerCase().includes(triagem.fab.toLowerCase())||
+             c.modelo.toLowerCase().includes(triagem.mod.toLowerCase())||
+             c.codigo.toLowerCase().includes(triagem.fal.toLowerCase());
+    }).slice(0,5);
+    if(relevantes.length){
+      casosCtx='\n\nCASOS CONFIRMADOS ANTERIORMENTE (use como referência prioritária):\n'+
+        relevantes.map(c=>`- ${c.fabricante} ${c.modelo}: Código ${c.codigo} → ${c.diagnosticoReal} (confirmado por ${c.tecnico})`).join('\n');
+    }
+  }
+
+  let base=`Voce e o Assistente Tecnico da BG Service, especializado em manutencao de plataformas elevatorias.
+
+REGRAS:
+- Se houver CASOS CONFIRMADOS acima, use-os como resposta PRIORITARIA
+- Se o manual estiver disponivel, consulte a tabela de codigos de erro/alarme
+- Codigos de falha (AL, ERR, E, F + numeros) devem ser buscados no manual
+- Se nao encontrar o codigo, diga claramente e use conhecimento geral
+- Seja direto — o tecnico esta em campo
+
+FORMATO:
+**CODIGO:** [codigo]
+**DIAGNOSTICO:** [o que significa]
+**CAUSA PROVAVEL:** [causa raiz]
+**PROCEDIMENTO:** passos numerados para resolver
+**SEGURANCA:** alertas se houver risco`;
+
+  base+=casosCtx;
+
+  if(!mans?.length)return base+'\n\nAVISO: Nenhum manual especifico localizado. Respondendo com conhecimento geral.';
+  const txt=mans.map((m,i)=>'=== MANUAL '+(i+1)+': '+m.name+' ===\n'+m.content).join('\n\n');
+  return base+'\n\nMANUAL DO EQUIPAMENTO:\n'+txt+'\n\nBusque o codigo exato na secao de alarmes/erros do manual.';
+}
+
+// ═══ RENDER ═══
+function putB(role,text){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg '+(role==='u'?'u':'a');
+  d.innerHTML='<div class="av">'+(role==='u'?'👷':'🔧')+'</div><div class="bub">'+(role==='a'?fmt(text):esc(text))+'</div>';
+  c.appendChild(d);scroll();
+}
+function mkB(){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg a';
+  const b=document.createElement('div');b.className='bub';
+  b.innerHTML='<div class="dts"><span></span><span></span><span></span></div>';
+  d.innerHTML='<div class="av">🔧</div>';d.appendChild(b);c.appendChild(d);scroll();
+  return{div:d,bubble:b};
+}
+function fmt(t){
+  t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t=t.replace(/^\*\*([^*\n]+)\*\*:?\s*$/gm,'<span class="sh">$1</span>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/^(\d+)\.\s+/gm,'<br><strong style="color:var(--red)">$1.</strong> ');
+  t=t.replace(/^[-]\s+/gm,'<br>• ');
+  t=t.replace(/\n/g,'<br>');
+  return t;
+}
+function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function scroll(){const c=document.getElementById('chat');if(c)c.scrollTop=c.scrollHeight;}
+
+// ═══ INIT ═══
+window.addEventListener('DOMContentLoaded',async()=>{
+  await carregarUsuarios();
+  const tec=S.tec();
+  if(tec){entrar(tec);}
+});
+
+// Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/assistente-tecnico-bg2/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
