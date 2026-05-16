@@ -308,13 +308,32 @@ async function ghDelete(path,sha,msg){
 }
 
 // ═══ USUÁRIOS ═══
+async function ghGetUsers(){
+  const r=await fetch(GH_API+'dados/usuarios.json?t='+Date.now(),{
+    headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json'}
+  });
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const d=await r.json();
+  return{sha:d.sha,users:JSON.parse(atob(d.content.replace(/\n/g,'')))};
+}
+
+async function ghSaveUsers(users,sha,msg){
+  const r=await fetch(GH_API+'dados/usuarios.json',{
+    method:'PUT',
+    headers:{'Authorization':'token '+A.ghToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+    body:JSON.stringify({message:msg,content:btoa(unescape(encodeURIComponent(JSON.stringify(users,null,2)))),branch:BRANCH,sha})
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.message);}
+  return r.json();
+}
+
 async function loadUsuarios(){
   try{
-    const{content}=await ghGet('dados/usuarios.json');
-    renderUsuarios(content);
-    document.getElementById('statUsers').textContent=content.length;
+    const{users}=await ghGetUsers();
+    renderUsuarios(users);
+    document.getElementById('statUsers').textContent=users.length;
   }catch(e){
-    document.getElementById('usersList').innerHTML='<tr><td colspan="3" style="color:var(--mut);font-size:12px;padding:10px">Arquivo usuarios.json não encontrado no GitHub</td></tr>';
+    document.getElementById('usersList').innerHTML='<tr><td colspan="3" style="color:var(--mut);font-size:12px;padding:10px">Erro: '+e.message+'</td></tr>';
   }
 }
 
@@ -332,28 +351,28 @@ async function addUsuario(){
   const nome=document.getElementById('novoNome').value.trim();
   const senha=document.getElementById('novaSenha').value.trim();
   if(!nome||!senha){showGlobal('er','Preencha nome e senha');return;}
+  if(!A.ghToken()){showGlobal('er','Configure o GitHub Token primeiro');return;}
   try{
-    let users=[],sha=null;
-    try{const d=await ghGet('dados/usuarios.json');users=d.content;sha=d.sha;}catch(e){}
+    const{sha,users}=await ghGetUsers();
     if(users.find(u=>u.nome.toLowerCase()===nome.toLowerCase())){showGlobal('er','Técnico já existe');return;}
-    users.push({nome,senha:btoa(senha),ativo:true,criado:new Date().toISOString()});
-    await ghPut('dados/usuarios.json',users,sha,'Adiciona tecnico: '+nome);
+    users.push({nome,senha:btoa(unescape(encodeURIComponent(senha))),ativo:true,criado:new Date().toISOString()});
+    await ghSaveUsers(users,sha,'Adiciona tecnico: '+nome);
     document.getElementById('novoNome').value='';
     document.getElementById('novaSenha').value='';
     showGlobal('ok','Técnico '+nome+' adicionado!');
     await loadUsuarios();
-  }catch(e){showGlobal('er','Erro: '+e.message);}
+  }catch(e){showGlobal('er','Erro: '+e.message);console.error(e);}
 }
 
 async function remUsuario(i){
   if(!confirm('Remover este técnico?'))return;
   try{
-    const{content,sha}=await ghGet('dados/usuarios.json');
-    content.splice(i,1);
-    await ghPut('dados/usuarios.json',content,sha,'Remove tecnico');
+    const{sha,users}=await ghGetUsers();
+    users.splice(i,1);
+    await ghSaveUsers(users,sha,'Remove tecnico');
     showGlobal('ok','Técnico removido');
     await loadUsuarios();
-  }catch(e){showGlobal('er','Erro: '+e.message);}
+  }catch(e){showGlobal('er','Erro: '+e.message);console.error(e);}
 }
 
 // ═══ MANUAIS ═══
