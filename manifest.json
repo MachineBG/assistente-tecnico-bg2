@@ -1,0 +1,26 @@
+{
+  "name": "BG Service - Assistente Técnico",
+  "short_name": "BG Service",
+  "description": "Assistente técnico para manutenção de plataformas elevatórias",
+  "start_url": "/assistente-tecnico-bg2/",
+  "scope": "/assistente-tecnico-bg2/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#cc0000",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
